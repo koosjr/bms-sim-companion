@@ -1,0 +1,105 @@
+// src/types.ts
+
+// ── Imported from BMSHub ─────────────────────────────────────────────────────
+
+export type IOType = 'AI' | 'AO' | 'DI' | 'DO';
+
+export interface ImportedPoint {
+  tag: string;
+  description: string;
+  io_type: IOType;
+}
+
+export interface ImportedDevice {
+  id: string;
+  name: string;
+  description: string;
+  points: ImportedPoint[];
+}
+
+export interface SimulatorExport {
+  version: string;
+  project: string;
+  exported_at: string;
+  devices: ImportedDevice[];
+}
+
+// ── Protocol types ───────────────────────────────────────────────────────────
+
+export type Protocol = 'modbus' | 'bacnet';
+export type ByteOrder = 'big' | 'little';
+export type ModbusDataType = 'bool' | '16int' | '16uint' | '32float' | '32int' | '32uint';
+export type ModbusFunctionCode = 1 | 2 | 3 | 4;
+export type BACnetObjectType =
+  | 'analogInput' | 'analogOutput' | 'analogValue'
+  | 'binaryInput' | 'binaryOutput' | 'binaryValue'
+  | 'multiStateValue';
+export type BACnetUnits =
+  | 'degreesCelsius' | 'degreesKelvin'
+  | 'pascals' | 'kilopascals'
+  | 'percent'
+  | 'cubicMetersPerHour' | 'litersPerSecond'
+  | 'hertz' | 'revolutionsPerMinute'
+  | 'noUnits';
+
+// ── Configured point (protocol addressing + sim values) ──────────────────────
+
+export interface SimPoint {
+  tag: string;
+  description: string;
+  io_type: IOType;
+  // Modbus
+  function_code: ModbusFunctionCode;
+  register: number;
+  data_type: ModbusDataType;
+  scale: number;
+  object_count: number;
+  // BACnet
+  object_type: BACnetObjectType;
+  object_instance: number;
+  units: BACnetUnits;
+  cov_increment: number;
+  // Sim values (engineering units)
+  base_value: number;
+  noise_pct: number;
+}
+
+// ── Configured device ────────────────────────────────────────────────────────
+
+export interface SimDevice {
+  id: string;
+  source_id: string;       // ImportedDevice.id this was derived from
+  name: string;
+  description: string;
+  protocol: Protocol;
+  ip_address: string;
+  // Modbus
+  modbus_port: number;
+  unit_id: number;
+  byte_order: ByteOrder;
+  word_order: ByteOrder;
+  // BACnet
+  bacnet_port: number;
+  device_instance: number;
+  device_name: string;
+  vendor_id: number;
+  points: SimPoint[];
+}
+
+// ── Project-level network config ─────────────────────────────────────────────
+
+export interface NetworkConfig {
+  subnet: string;           // e.g. "192.168.1.0/24"
+  gateway: string;          // e.g. "192.168.1.1"
+  pi_ip: string;            // Pi's own macvlan IP, e.g. "192.168.1.200"
+  parent_interface: string; // e.g. "eth0"
+}
+
+// ── App state ─────────────────────────────────────────────────────────────────
+
+export interface AppState {
+  project_name: string;
+  imported: SimulatorExport | null;
+  devices: SimDevice[];
+  network: NetworkConfig;
+}
