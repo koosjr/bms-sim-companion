@@ -1,7 +1,6 @@
 // src/components/DeviceSetupTab.tsx
 import { useState } from 'react';
 import type { AppState, SimDevice, Protocol, ByteOrder } from '../types';
-import { defaultDeviceFromImport } from '../defaults';
 
 interface Props {
   state: AppState;
@@ -30,11 +29,18 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
   }
 
   function duplicateDevice(device: SimDevice) {
-    if (!state.imported) return;
-    const source = state.imported.devices.find(d => d.id === device.source_id);
-    if (!source) return;
-    const newDevice = defaultDeviceFromImport(source, devices.length);
-    newDevice.name = `${device.name} (copy)`;
+    const lastOctet = parseInt(device.ip_address.split('.').pop() ?? '101', 10);
+    const newIp = `${state.network.ip_prefix}.${lastOctet + 1}`;
+
+    const newDevice: SimDevice = {
+      ...device,
+      id: crypto.randomUUID(),
+      name: `${device.name} (copy)`,
+      ip_address: newIp,
+      device_instance: device.device_instance + 1,
+      points: device.points.map(p => ({ ...p })),  // deep-copy all point data including registers
+    };
+
     onUpdate({ devices: [...devices, newDevice] });
     setOpenId(newDevice.id);
   }
@@ -108,8 +114,22 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
                     </select>
                   </Field>
                   <Field label="IP Address">
-                    <input className={inputCls} style={inputStyle} value={device.ip_address}
-                      onChange={e => patchDevice(device.id, { ip_address: e.target.value })} />
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-mono px-2 py-1.5 rounded border bg-gray-50 whitespace-nowrap"
+                        style={{ borderColor: '#D3D1C7', color: '#888780', background: '#F9F8F4' }}>
+                        {state.network.ip_prefix}.
+                      </span>
+                      <input
+                        type="number"
+                        min={1} max={254}
+                        className={inputCls}
+                        style={{ ...inputStyle, width: 80 }}
+                        value={device.ip_address.split('.').pop() ?? ''}
+                        onChange={e => patchDevice(device.id, {
+                          ip_address: `${state.network.ip_prefix}.${e.target.value}`
+                        })}
+                      />
+                    </div>
                   </Field>
                 </div>
 

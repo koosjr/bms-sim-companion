@@ -29,6 +29,29 @@ export default function GenerateTab({ state, onUpdate }: Props) {
     onUpdate({ network: { ...network, ...patch } });
   }
 
+  function changePrefix(newPrefix: string) {
+    // Extract last octets from current gateway and pi_ip
+    const gwLast = network.gateway.split('.').pop() ?? '1';
+    const piLast = network.pi_ip.split('.').pop() ?? '200';
+
+    // Update all device IPs to use new prefix
+    const updatedDevices = devices.map(d => {
+      const lastOctet = d.ip_address.split('.').pop() ?? '101';
+      return { ...d, ip_address: `${newPrefix}.${lastOctet}` };
+    });
+
+    onUpdate({
+      network: {
+        ...network,
+        ip_prefix: newPrefix,
+        subnet: `${newPrefix}.0/24`,
+        gateway: `${newPrefix}.${gwLast}`,
+        pi_ip: `${newPrefix}.${piLast}`,
+      },
+      devices: updatedDevices,
+    });
+  }
+
   async function downloadZip() {
     setDownloading(true);
     try {
@@ -66,9 +89,10 @@ export default function GenerateTab({ state, onUpdate }: Props) {
       <div className="bg-white rounded-xl border p-5 mb-5" style={{ borderColor: '#D3D1C7' }}>
         <h3 className="font-semibold text-sm mb-4" style={{ color: '#2C2C2A' }}>Raspberry Pi Network</h3>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Subnet (CIDR)">
-            <input className={inputCls} style={inputStyle} value={network.subnet}
-              onChange={e => patchNetwork({ subnet: e.target.value })} />
+          <Field label="IP Prefix (first 3 octets)">
+            <input className={inputCls} style={inputStyle} value={network.ip_prefix}
+              onChange={e => changePrefix(e.target.value)}
+              placeholder="e.g. 192.168.1" />
           </Field>
           <Field label="Gateway">
             <input className={inputCls} style={inputStyle} value={network.gateway}

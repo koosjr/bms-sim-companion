@@ -89,7 +89,8 @@ export interface SimDevice {
 // ── Project-level network config ─────────────────────────────────────────────
 
 export interface NetworkConfig {
-  subnet: string;           // e.g. "192.168.1.0/24"
+  ip_prefix: string;        // first 3 octets, e.g. "192.168.1"
+  subnet: string;           // derived, e.g. "192.168.1.0/24"
   gateway: string;          // e.g. "192.168.1.1"
   pi_ip: string;            // Pi's own macvlan IP, e.g. "192.168.1.200"
   parent_interface: string; // e.g. "eth0"

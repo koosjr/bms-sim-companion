@@ -4,6 +4,7 @@ import type { AppState, NetworkConfig } from './types';
 const KEY = 'bms_sim_state';
 
 const DEFAULT_NETWORK: NetworkConfig = {
+  ip_prefix: '192.168.1',
   subnet: '192.168.1.0/24',
   gateway: '192.168.1.1',
   pi_ip: '192.168.1.200',
@@ -14,7 +15,11 @@ export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return emptyState();
-    return JSON.parse(raw) as AppState;
+    const parsed = JSON.parse(raw) as AppState;
+    return {
+      ...parsed,
+      network: { ...DEFAULT_NETWORK, ...parsed.network },  // ensure ip_prefix exists
+    };
   } catch {
     return emptyState();
   }
