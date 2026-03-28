@@ -1,5 +1,5 @@
 // src/storage.ts
-import { AppState, NetworkConfig } from './types';
+import type { AppState, NetworkConfig } from './types';
 
 const KEY = 'bms_sim_state';
 

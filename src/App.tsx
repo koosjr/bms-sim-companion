@@ -1,121 +1,75 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// src/App.tsx
+import { useState } from 'react';
+import type { AppState } from './types';
+import { loadState, saveState } from './storage';
+import ImportTab from './components/ImportTab';
+import DeviceSetupTab from './components/DeviceSetupTab';
+import PointMappingTab from './components/PointMappingTab';
+import SimValuesTab from './components/SimValuesTab';
+import GenerateTab from './components/GenerateTab';
 
-function App() {
-  const [count, setCount] = useState(0)
+type Tab = 'import' | 'devices' | 'points' | 'values' | 'generate';
+
+export default function App() {
+  const [state, setState] = useState<AppState>(() => loadState());
+  const [activeTab, setActiveTab] = useState<Tab>('import');
+
+  function update(patch: Partial<AppState>) {
+    setState(prev => {
+      const next = { ...prev, ...patch };
+      saveState(next);
+      return next;
+    });
+  }
+
+  const TABS: { id: Tab; label: string }[] = [
+    { id: 'import',   label: '① Import' },
+    { id: 'devices',  label: '② Devices' },
+    { id: 'points',   label: '③ Points' },
+    { id: 'values',   label: '④ Sim Values' },
+    { id: 'generate', label: '⑤ Generate' },
+  ];
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="min-h-screen" style={{ background: '#F5F4EF' }}>
+      {/* Header */}
+      <div className="border-b" style={{ background: '#2C2C2A', borderColor: '#444' }}>
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-white">BMS Simulator Companion</h1>
+            <p className="text-xs" style={{ color: '#888780' }}>Device simulator config generator</p>
+          </div>
+          <span className="text-xs px-2 py-1 rounded font-mono"
+            style={{ background: '#444', color: '#ccc' }}>
+            {state.project_name}
+          </span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+        {/* Tabs */}
+        <div className="max-w-5xl mx-auto px-6 flex gap-1">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className="px-4 py-2 text-sm font-medium transition-colors rounded-t"
+              style={activeTab === t.id
+                ? { background: '#F5F4EF', color: '#2C2C2A' }
+                : { color: '#888780' }
+              }
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </div>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/* Content */}
+      <div className="max-w-5xl mx-auto px-6 py-6">
+        {activeTab === 'import'   && <ImportTab state={state} onUpdate={update} onNext={() => setActiveTab('devices')} />}
+        {activeTab === 'devices'  && <DeviceSetupTab state={state} onUpdate={update} onNext={() => setActiveTab('points')} />}
+        {activeTab === 'points'   && <PointMappingTab state={state} onUpdate={update} onNext={() => setActiveTab('values')} />}
+        {activeTab === 'values'   && <SimValuesTab state={state} onUpdate={update} onNext={() => setActiveTab('generate')} />}
+        {activeTab === 'generate' && <GenerateTab state={state} onUpdate={update} />}
+      </div>
+    </div>
+  );
 }
-
-export default App

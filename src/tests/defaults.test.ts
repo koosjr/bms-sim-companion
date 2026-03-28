@@ -1,7 +1,7 @@
 // src/tests/defaults.test.ts
 import { describe, it, expect } from 'vitest';
 import { defaultSimPoint, defaultDeviceFromImport } from '../defaults';
-import { ImportedPoint, ImportedDevice } from '../types';
+import type { ImportedPoint, ImportedDevice } from '../types';
 
 const AI_TEMP: ImportedPoint = { tag: 'AHU1SATMP', description: 'SA Temp', io_type: 'AI' };
 const DI_RUN: ImportedPoint  = { tag: 'AHU1RUNSS', description: 'Running', io_type: 'DI' };

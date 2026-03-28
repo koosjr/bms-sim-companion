@@ -1,6 +1,6 @@
 // src/defaults.ts
 import { v4 as uuidv4 } from 'uuid';
-import {
+import type {
   ImportedPoint, ImportedDevice, SimPoint, SimDevice,
   Protocol, ModbusFunctionCode, ModbusDataType, BACnetObjectType, BACnetUnits, IOType,
 } from './types';
@@ -62,7 +62,7 @@ function bacnetUnits(tag: string): BACnetUnits {
 export function defaultSimPoint(
   imported: ImportedPoint,
   instanceIndex: number,
-  protocol: Protocol,
+  _protocol: Protocol,
 ): SimPoint {
   const { fc, dt, scale } = modbusDefaults(imported.io_type);
   const sim = simDefaults(imported.tag);
