@@ -1,0 +1,11 @@
+services:
+  modbus-simulator:
+    build: .
+    container_name: bms-modbus-sim
+    restart: unless-stopped
+    ports:
+      - "502:502"
+    volumes:
+      - ./config.json:/app/config.json:ro
+    environment:
+      - CONFIG_PATH=/app/config.json
