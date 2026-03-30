@@ -8,22 +8,39 @@ interface Props {
   onNext: () => void;
 }
 
-const inputCls = "border rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400";
+const inputCls = "border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400";
 const inputStyle = { borderColor: '#D3D1C7' };
 
-function patchPointInDevice(device: SimDevice, pointTag: string, patch: Partial<SimPoint>): SimDevice {
-  return { ...device, points: device.points.map(p => p.tag === pointTag ? { ...p, ...patch } : p) };
-}
+const IO_ORDER = ['AI', 'AO', 'DI', 'DO', 'AV', 'BV'];
 
 const IO_COLORS: Record<string, { bg: string; text: string }> = {
   AI: { bg: '#E1F5EE', text: '#085041' },
   AO: { bg: '#FAEEDA', text: '#854F0B' },
   DI: { bg: '#FCEBEB', text: '#A32D2D' },
   DO: { bg: '#2C2C2A', text: '#F1EFE8' },
+  AV: { bg: '#E8EFF8', text: '#1a3a6b' },
+  BV: { bg: '#F3EBF8', text: '#5a1a7a' },
 };
+
+// Default FC per IO type (Eliwell: all holding registers FC3)
+const DEFAULT_FC: Record<string, number> = {
+  AI: 4, AO: 3, DI: 3, DO: 3, AV: 3, BV: 3,
+};
+
+// Default data type per IO type
+const DEFAULT_DTYPE: Record<string, ModbusDataType> = {
+  AI: '16int', AO: '16int', DI: '16uint', DO: '16uint', AV: '16int', BV: '16uint',
+};
+
+function patchPointInDevice(device: SimDevice, pointTag: string, patch: Partial<SimPoint>): SimDevice {
+  return { ...device, points: device.points.map(p => p.tag === pointTag ? { ...p, ...patch } : p) };
+}
 
 export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
   const [activeDeviceId, setActiveDeviceId] = useState<string>(state.devices[0]?.id ?? '');
+  // Auto-fill start register per IO group: { 'AI': '8001', 'DI': '8100', ... }
+  const [fillStart, setFillStart] = useState<Record<string, string>>({});
+
   const { devices } = state;
   const device = devices.find(d => d.id === activeDeviceId) ?? devices[0];
 
@@ -33,14 +50,62 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
-  if (!device) return <div className="text-sm" style={{ color: '#888780' }}>No devices configured. Go back to Device Setup.</div>;
+  function patchAllInGroup(ioType: string, patch: Partial<SimPoint>) {
+    if (!device) return;
+    const updated = {
+      ...device,
+      points: device.points.map(p => p.io_type === ioType ? { ...p, ...patch } : p),
+    };
+    onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
+  }
+
+  function autoFillRegisters(ioType: string) {
+    if (!device) return;
+    const start = parseInt(fillStart[ioType] ?? '');
+    if (isNaN(start)) return;
+    const groupPoints = device.points.filter(p => p.io_type === ioType);
+    let reg = start;
+    const updated = {
+      ...device,
+      points: device.points.map(p => {
+        if (p.io_type !== ioType) return p;
+        const r = reg;
+        reg += p.data_type?.startsWith('32') ? 2 : 1;
+        return { ...p, register: r };
+      }),
+    };
+    // Verify we consumed the right points
+    const _ = groupPoints; void _;
+    onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
+  }
+
+  if (!device) return (
+    <div className="text-sm" style={{ color: '#888780' }}>No devices configured. Go back to Device Setup.</div>
+  );
+
+  // Group points by IO type, preserving original order within each group
+  const groups: Record<string, SimPoint[]> = {};
+  for (const io of IO_ORDER) groups[io] = [];
+  for (const p of device.points) {
+    const key = p.io_type in groups ? p.io_type : 'AI';
+    groups[key].push(p);
+  }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-5xl">
       <h2 className="text-xl font-bold mb-1" style={{ color: '#2C2C2A' }}>Point Mapping</h2>
-      <p className="text-sm mb-4" style={{ color: '#888780' }}>
+      <p className="text-sm mb-1" style={{ color: '#888780' }}>
         Assign {device.protocol === 'modbus' ? 'Modbus register addresses' : 'BACnet object types and instances'} to each point.
+        Points are grouped by I/O type — order within each group is preserved from the import.
       </p>
+
+      {device.protocol === 'modbus' && (
+        <div className="text-xs mb-4 px-3 py-2 rounded border" style={{ borderColor: '#EF9F27', background: '#FAEEDA', color: '#854F0B' }}>
+          <strong>Eliwell / most PLCs:</strong> DI and DO use FC3 (holding register, 16-bit word, value 0 or 1) — <em>not</em> FC1/FC2 coils.
+          Use FC1/FC2 only if your controller explicitly uses coil addressing for binary points.
+          32-bit values occupy 2 consecutive registers — word order is set per device in Device Setup.
+        </div>
+      )}
 
       {/* Device selector */}
       <div className="flex gap-2 flex-wrap mb-5">
@@ -57,114 +122,157 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
         ))}
       </div>
 
-      {/* Points table */}
-      <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: '#D3D1C7' }}>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs border-b" style={{ background: '#F5F4EF', borderColor: '#D3D1C7' }}>
-              <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Tag</th>
-              <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>I/O</th>
-              {device.protocol === 'modbus' ? (
-                <>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>FC</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Register</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Data Type</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Scale</th>
-                </>
-              ) : (
-                <>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Object Type</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Instance</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Units</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>COV Inc.</th>
-                </>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y" style={{ borderColor: '#F1EFE8' }}>
-            {device.points.map(point => {
-              const col = IO_COLORS[point.io_type] ?? { bg: '#eee', text: '#333' };
-              return (
-                <tr key={point.tag} className="hover:bg-gray-50">
-                  <td className="px-4 py-2">
-                    <div className="font-mono text-xs font-bold" style={{ color: '#2C2C2A' }}>{point.tag}</div>
-                    <div className="text-xs" style={{ color: '#888780' }}>{point.description}</div>
-                  </td>
-                  <td className="px-4 py-2">
-                    <span className="text-xs px-2 py-0.5 rounded font-mono"
-                      style={{ background: col.bg, color: col.text }}>
-                      {point.io_type}
-                    </span>
-                  </td>
-                  {device.protocol === 'modbus' ? (
-                    <>
+      {/* IO groups */}
+      <div className="space-y-6">
+        {IO_ORDER.map(ioType => {
+          const pts = groups[ioType];
+          if (pts.length === 0) return null;
+          const col = IO_COLORS[ioType] ?? { bg: '#eee', text: '#333' };
+
+          return (
+            <div key={ioType} className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: '#D3D1C7' }}>
+
+              {/* Group header */}
+              <div className="flex items-center gap-3 px-4 py-2 border-b" style={{ background: col.bg, borderColor: '#D3D1C7' }}>
+                <span className="font-mono font-bold text-sm" style={{ color: col.text }}>{ioType}</span>
+                <span className="text-xs" style={{ color: col.text }}>{pts.length} point{pts.length !== 1 ? 's' : ''}</span>
+
+                {device.protocol === 'modbus' && (
+                  <div className="flex items-center gap-2 ml-auto">
+                    {/* Apply FC + data type to whole group */}
+                    <span className="text-xs" style={{ color: col.text }}>Apply to all:</span>
+                    <select className={inputCls} style={{ ...inputStyle, width: '65px', fontSize: '11px', padding: '2px 4px' }}
+                      defaultValue={DEFAULT_FC[ioType]}
+                      onChange={e => patchAllInGroup(ioType, { function_code: Number(e.target.value) as ModbusFunctionCode })}>
+                      <option value={1}>FC1</option>
+                      <option value={2}>FC2</option>
+                      <option value={3}>FC3</option>
+                      <option value={4}>FC4</option>
+                    </select>
+                    <select className={inputCls} style={{ ...inputStyle, width: '90px', fontSize: '11px', padding: '2px 4px' }}
+                      defaultValue={DEFAULT_DTYPE[ioType]}
+                      onChange={e => patchAllInGroup(ioType, { data_type: e.target.value as ModbusDataType })}>
+                      {(['bool','16int','16uint','32float','32int','32uint'] as ModbusDataType[]).map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+
+                    {/* Auto-fill registers */}
+                    <span className="text-xs ml-2" style={{ color: col.text }}>Start reg:</span>
+                    <input type="number" placeholder="e.g. 8001"
+                      className={inputCls} style={{ ...inputStyle, width: '90px', fontSize: '11px', padding: '2px 4px' }}
+                      value={fillStart[ioType] ?? ''}
+                      onChange={e => setFillStart(f => ({ ...f, [ioType]: e.target.value }))} />
+                    <button
+                      onClick={() => autoFillRegisters(ioType)}
+                      className="text-xs px-2 py-1 rounded font-medium"
+                      style={{ background: col.text, color: col.bg }}>
+                      Fill +1
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Points table */}
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs border-b" style={{ background: '#F5F4EF', borderColor: '#D3D1C7' }}>
+                    <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Tag</th>
+                    {device.protocol === 'modbus' ? (
+                      <>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>FC</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Register</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Data Type</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Scale</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Object Type</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Instance</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>Units</th>
+                        <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>COV Inc.</th>
+                      </>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="divide-y" style={{ borderColor: '#F1EFE8' }}>
+                  {pts.map(point => (
+                    <tr key={point.tag} className="hover:bg-gray-50">
                       <td className="px-4 py-2">
-                        <select className={inputCls} style={{ ...inputStyle, width: '70px' }}
-                          value={point.function_code}
-                          onChange={e => patchPoint(point.tag, { function_code: Number(e.target.value) as ModbusFunctionCode })}>
-                          <option value={1}>FC1</option>
-                          <option value={2}>FC2</option>
-                          <option value={3}>FC3</option>
-                          <option value={4}>FC4</option>
-                        </select>
+                        <div className="font-mono text-xs font-bold" style={{ color: '#2C2C2A' }}>{point.tag}</div>
+                        <div className="text-xs" style={{ color: '#888780' }}>{point.description}</div>
                       </td>
-                      <td className="px-4 py-2">
-                        <input type="number" className={inputCls} style={{ ...inputStyle, width: '90px' }}
-                          value={point.register}
-                          onChange={e => patchPoint(point.tag, { register: Number(e.target.value) })} />
-                      </td>
-                      <td className="px-4 py-2">
-                        <select className={inputCls} style={{ ...inputStyle, width: '100px' }}
-                          value={point.data_type}
-                          onChange={e => patchPoint(point.tag, { data_type: e.target.value as ModbusDataType })}>
-                          {(['bool','16int','16uint','32float','32int','32uint'] as ModbusDataType[]).map(t => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-2">
-                        <input type="number" step="0.1" className={inputCls} style={{ ...inputStyle, width: '70px' }}
-                          value={point.scale}
-                          onChange={e => patchPoint(point.tag, { scale: Number(e.target.value) })} />
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-4 py-2">
-                        <select className={inputCls} style={{ ...inputStyle, width: '140px' }}
-                          value={point.object_type}
-                          onChange={e => patchPoint(point.tag, { object_type: e.target.value as BACnetObjectType })}>
-                          {(['analogInput','analogOutput','analogValue','binaryInput','binaryOutput','binaryValue','multiStateValue'] as BACnetObjectType[]).map(t => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-2">
-                        <input type="number" className={inputCls} style={{ ...inputStyle, width: '80px' }}
-                          value={point.object_instance}
-                          onChange={e => patchPoint(point.tag, { object_instance: Number(e.target.value) })} />
-                      </td>
-                      <td className="px-4 py-2">
-                        <select className={inputCls} style={{ ...inputStyle, width: '140px' }}
-                          value={point.units}
-                          onChange={e => patchPoint(point.tag, { units: e.target.value as BACnetUnits })}>
-                          {(['degreesCelsius','degreesKelvin','pascals','kilopascals','percent','cubicMetersPerHour','litersPerSecond','hertz','revolutionsPerMinute','noUnits'] as BACnetUnits[]).map(u => (
-                            <option key={u} value={u}>{u}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-2">
-                        <input type="number" step="0.1" className={inputCls} style={{ ...inputStyle, width: '70px' }}
-                          value={point.cov_increment}
-                          onChange={e => patchPoint(point.tag, { cov_increment: Number(e.target.value) })} />
-                      </td>
-                    </>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                      {device.protocol === 'modbus' ? (
+                        <>
+                          <td className="px-4 py-2">
+                            <select className={inputCls} style={{ ...inputStyle, width: '70px' }}
+                              value={point.function_code}
+                              onChange={e => patchPoint(point.tag, { function_code: Number(e.target.value) as ModbusFunctionCode })}>
+                              <option value={1}>FC1</option>
+                              <option value={2}>FC2</option>
+                              <option value={3}>FC3</option>
+                              <option value={4}>FC4</option>
+                            </select>
+                          </td>
+                          <td className="px-4 py-2">
+                            <input type="number" className={inputCls} style={{ ...inputStyle, width: '90px' }}
+                              value={point.register}
+                              onChange={e => patchPoint(point.tag, { register: Number(e.target.value) })} />
+                          </td>
+                          <td className="px-4 py-2">
+                            <select className={inputCls} style={{ ...inputStyle, width: '100px' }}
+                              value={point.data_type}
+                              onChange={e => patchPoint(point.tag, { data_type: e.target.value as ModbusDataType })}>
+                              {(['bool','16int','16uint','32float','32int','32uint'] as ModbusDataType[]).map(t => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-2">
+                            <input type="number" step="0.1" className={inputCls} style={{ ...inputStyle, width: '70px' }}
+                              value={point.scale}
+                              onChange={e => patchPoint(point.tag, { scale: Number(e.target.value) })} />
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-2">
+                            <select className={inputCls} style={{ ...inputStyle, width: '140px' }}
+                              value={point.object_type}
+                              onChange={e => patchPoint(point.tag, { object_type: e.target.value as BACnetObjectType })}>
+                              {(['analogInput','analogOutput','analogValue','binaryInput','binaryOutput','binaryValue','multiStateValue'] as BACnetObjectType[]).map(t => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-2">
+                            <input type="number" className={inputCls} style={{ ...inputStyle, width: '80px' }}
+                              value={point.object_instance}
+                              onChange={e => patchPoint(point.tag, { object_instance: Number(e.target.value) })} />
+                          </td>
+                          <td className="px-4 py-2">
+                            <select className={inputCls} style={{ ...inputStyle, width: '140px' }}
+                              value={point.units}
+                              onChange={e => patchPoint(point.tag, { units: e.target.value as BACnetUnits })}>
+                              {(['degreesCelsius','degreesKelvin','pascals','kilopascals','percent','cubicMetersPerHour','litersPerSecond','hertz','revolutionsPerMinute','noUnits'] as BACnetUnits[]).map(u => (
+                                <option key={u} value={u}>{u}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-2">
+                            <input type="number" step="0.1" className={inputCls} style={{ ...inputStyle, width: '70px' }}
+                              value={point.cov_increment}
+                              onChange={e => patchPoint(point.tag, { cov_increment: Number(e.target.value) })} />
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
       </div>
 
       <button onClick={onNext} className="mt-6 px-5 py-2 rounded text-sm font-medium text-white"
