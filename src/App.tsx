@@ -1,26 +1,146 @@
 // src/App.tsx
 import { useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import type { AppState } from './types';
-import { loadState, saveState } from './storage';
+import {
+  saveState,
+  migrateIfNeeded,
+  loadProjectState,
+  saveProjectState,
+  deleteProjectState,
+  getActiveProjectId,
+  setActiveProjectId,
+  loadProjects,
+  saveProjects,
+  createEmptyState,
+} from './storage';
+import type { ProjectMeta } from './storage';
 import ImportTab from './components/ImportTab';
 import DeviceSetupTab from './components/DeviceSetupTab';
 import PointMappingTab from './components/PointMappingTab';
 import SimValuesTab from './components/SimValuesTab';
 import GenerateTab from './components/GenerateTab';
+import ProjectBar from './components/ProjectBar';
 
 type Tab = 'import' | 'devices' | 'points' | 'values' | 'generate';
 
+function initApp(): { projects: ProjectMeta[]; activeProjectId: string; state: AppState } {
+  const { projects, activeId, activeState } = migrateIfNeeded();
+  return { projects, activeProjectId: activeId, state: activeState };
+}
+
 export default function App() {
-  const [state, setState] = useState<AppState>(() => loadState());
+  const [{ projects, activeProjectId, state }, setAll] = useState(() => initApp());
   const [activeTab, setActiveTab] = useState<Tab>('import');
 
+  // ── Core state updater ────────────────────────────────────────────────────
   function update(patch: Partial<AppState>) {
-    setState(prev => {
-      const next = { ...prev, ...patch };
+    setAll(prev => {
+      const next = { ...prev.state, ...patch };
+      // Keep legacy key in sync for any external tools that may read it
       saveState(next);
-      return next;
+      saveProjectState(prev.activeProjectId, next);
+      // Update the project's updatedAt in the metadata
+      const updatedProjects = prev.projects.map(p =>
+        p.id === prev.activeProjectId
+          ? { ...p, name: next.project_name, updatedAt: new Date().toISOString() }
+          : p
+      );
+      saveProjects(updatedProjects);
+      return { ...prev, state: next, projects: updatedProjects };
     });
   }
+
+  // ── Project management ────────────────────────────────────────────────────
+  function switchProject(id: string) {
+    if (id === activeProjectId) return;
+    const loaded = loadProjectState(id);
+    if (!loaded) return;
+    setActiveProjectId(id);
+    setAll(prev => ({ ...prev, activeProjectId: id, state: loaded }));
+    setActiveTab('import');
+  }
+
+  function newProject(name: string) {
+    const id = uuidv4();
+    const trimmed = name.trim() || 'New Project';
+    const newState = createEmptyState(trimmed);
+    const meta: ProjectMeta = { id, name: trimmed, updatedAt: new Date().toISOString() };
+    saveProjectState(id, newState);
+    setActiveProjectId(id);
+    setAll(prev => {
+      const updated = [...prev.projects, meta];
+      saveProjects(updated);
+      return { projects: updated, activeProjectId: id, state: newState };
+    });
+    setActiveTab('import');
+  }
+
+  function deleteProject(id: string) {
+    setAll(prev => {
+      if (prev.projects.length <= 1) return prev;
+      const updated = prev.projects.filter(p => p.id !== id);
+      saveProjects(updated);
+      deleteProjectState(id);
+      // Switch to first remaining project
+      const next = updated[0];
+      const nextState = loadProjectState(next.id) ?? createEmptyState(next.name);
+      setActiveProjectId(next.id);
+      return { projects: updated, activeProjectId: next.id, state: nextState };
+    });
+  }
+
+  function exportProject() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${state.project_name.replace(/\s+/g, '_')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importProject(file: File) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const parsed = JSON.parse(e.target?.result as string) as AppState;
+        const id = uuidv4();
+        const name = parsed.project_name || file.name.replace(/\.json$/i, '') || 'Imported Project';
+        const importedState: AppState = { ...parsed, project_name: name };
+        const meta: ProjectMeta = { id, name, updatedAt: new Date().toISOString() };
+        saveProjectState(id, importedState);
+        setActiveProjectId(id);
+        setAll(prev => {
+          const updated = [...prev.projects, meta];
+          saveProjects(updated);
+          return { projects: updated, activeProjectId: id, state: importedState };
+        });
+        setActiveTab('import');
+      } catch {
+        alert('Failed to import project: invalid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ── Handlers passed to ProjectBar ─────────────────────────────────────────
+  function handleNew() {
+    const name = window.prompt('Project name:', 'New Project');
+    if (name === null) return; // cancelled
+    newProject(name);
+  }
+
+  function handleDelete() {
+    const current = projects.find(p => p.id === activeProjectId);
+    if (!current) return;
+    if (!window.confirm(`Delete project "${current.name}"? This cannot be undone.`)) return;
+    deleteProject(activeProjectId);
+  }
+
+  // ── Unused imports kept for reference (getActiveProjectId used indirectly) -
+  void getActiveProjectId;
+  void loadProjects;
 
   const TABS: { id: Tab; label: string }[] = [
     { id: 'import',   label: '① Import' },
@@ -44,6 +164,18 @@ export default function App() {
             {state.project_name}
           </span>
         </div>
+
+        {/* Project bar */}
+        <ProjectBar
+          projects={projects}
+          activeProjectId={activeProjectId}
+          onSwitch={switchProject}
+          onNew={handleNew}
+          onExport={exportProject}
+          onImport={importProject}
+          onDelete={handleDelete}
+        />
+
         {/* Tabs */}
         <div className="max-w-5xl mx-auto px-6 flex gap-1">
           {TABS.map(t => (
