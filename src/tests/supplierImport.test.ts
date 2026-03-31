@@ -66,6 +66,8 @@ describe('parseAddress', () => {
   it('returns null for undefined input', () => expect(parseAddress(undefined)).toBeNull());
   it('returns null for empty string', () => expect(parseAddress('')).toBeNull());
   it('returns null for non-numeric string', () => expect(parseAddress('N/A')).toBeNull());
+  it('returns null for float string "1.0" (not a pure integer)', () => expect(parseAddress('1.0')).toBeNull());
+  it('returns null for leading-zero string "0042" (ambiguous)', () => expect(parseAddress('0042')).toBeNull());
 });
 
 describe('normaliseFunctionCode', () => {
@@ -105,6 +107,8 @@ describe('normaliseUnits', () => {
   it('maps K → degreesKelvin', () => expect(normaliseUnits('K')).toBe('degreesKelvin'));
   it('maps unknown to noUnits', () => expect(normaliseUnits('bar')).toBe('noUnits'));
   it('maps empty string to noUnits', () => expect(normaliseUnits('')).toBe('noUnits'));
+  it('maps °F to noUnits (Fahrenheit not in BACnet enum)', () => expect(normaliseUnits('°F')).toBe('noUnits'));
+  it('maps degF to noUnits', () => expect(normaliseUnits('degF')).toBe('noUnits'));
 });
 
 describe('ioTypeFromModbus', () => {
@@ -196,6 +200,8 @@ describe('buildSimPoints', () => {
     expect(result.points).toHaveLength(3);
     expect(result.invalidIndices).toEqual([1, 2]);
     expect(result.skippedCount).toBe(0);
+    // Rows with missing address get register: 0 as a placeholder
+    expect(result.points[2].register).toBe(0);
   });
 
   it('skips DEV BACnet objects', () => {
@@ -224,5 +230,12 @@ describe('buildSimPoints', () => {
     expect(result.points).toHaveLength(1);
     expect(result.points[0].object_instance).toBe(131072);
     expect(result.points[0].object_type).toBe('analogValue');
+  });
+
+  it('clamps scale factor of 0 to 1 to avoid division-by-zero', () => {
+    const rows = [{ Name: 'Test', Register: '1', Scale: '0' }];
+    const mapping = { pointName: 'Name', address: 'Register', scaleFactor: 'Scale' };
+    const result = buildSimPoints(rows, mapping, 'modbus');
+    expect(result.points[0].scale).toBe(1);
   });
 });

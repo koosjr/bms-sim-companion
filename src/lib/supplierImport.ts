@@ -21,8 +21,11 @@ export interface ColumnMapping {
 
 export interface ImportResult {
   points: SimPoint[];
-  skippedCount: number;       // rows skipped (low-word rows, DEV objects, blank rows)
-  invalidIndices: number[];   // 0-based row indices missing name or address
+  /** Rows skipped entirely (low-word pair rows, blank rows, DEV/unrecognised BACnet objects) */
+  skippedCount: number;
+  /** 0-based row indices that are missing a name or address. These rows ARE included in `points`
+   *  but carry placeholder values: register/object_instance = 0, tag = "POINT_<index>". */
+  invalidIndices: number[];
 }
 
 // ── Normalisation: data types ─────────────────────────────────────────────────
@@ -109,7 +112,8 @@ export function normaliseObjectType(raw: string): BACnetObjectType | null {
 
 const UNITS_MAP: [string[], BACnetUnits][] = [
   [['°c', 'degc', 'celsius'],                             'degreesCelsius'],
-  [['°f', 'degf', 'fahrenheit'],                          'degreesCelsius'],
+  // Fahrenheit is not a BACnet standard unit enum value — fall through to noUnits
+  // rather than silently mislabelling as Celsius.
   [['k', 'kelvin'],                                        'degreesKelvin'],
   [['kpa', 'kilopascal'],                                  'kilopascals'],
   [['pa', 'pascal'],                                       'pascals'],
