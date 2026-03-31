@@ -1,0 +1,157 @@
+<h2>Column Mapping → Output Preview</h2>
+<p class="subtitle">Column selection stays simple. The base toggle lives on the output table — one global switch, applied to all addresses at once.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+  <!-- LEFT: Column mapping (clean, no base toggle) -->
+  <div>
+    <div style="font-size:11px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:8px;">Step 2 — Assign Columns</div>
+    <div class="mockup" style="margin:0;">
+      <div class="mockup-header">Map your columns to simulator fields</div>
+      <div class="mockup-body" style="padding:0;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="background:#F9F8F4;border-bottom:1px solid #E8E6DE;">
+              <th style="text-align:left;padding:6px 12px;font-size:10px;font-weight:600;color:#888780;text-transform:uppercase;">Field</th>
+              <th style="text-align:left;padding:6px 12px;font-size:10px;font-weight:600;color:#888780;text-transform:uppercase;">Source Column</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:7px 12px;font-weight:600;color:#2C2C2A;">Point Name <span style="color:#E24B4A">*</span></td>
+              <td style="padding:7px 12px;"><span style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:4px;padding:2px 8px;font-family:monospace;color:#085041;font-size:10px;">Name ✓</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:7px 12px;font-weight:600;color:#2C2C2A;">Register <span style="color:#E24B4A">*</span></td>
+              <td style="padding:7px 12px;">
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                  <span style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:4px;padding:2px 8px;font-family:monospace;color:#085041;font-size:10px;">Address_0based ✓</span>
+                  <span style="background:#F9F8F4;border:1px solid #D3D1C7;border-radius:4px;padding:2px 8px;font-family:monospace;color:#aaa;font-size:10px;">Register_Number_1based</span>
+                </div>
+              </td>
+            </tr>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:7px 12px;font-weight:600;color:#2C2C2A;">Function Code</td>
+              <td style="padding:7px 12px;"><span style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:4px;padding:2px 8px;font-family:monospace;color:#085041;font-size:10px;">Function_Code ✓</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:7px 12px;font-weight:600;color:#2C2C2A;">Data Type</td>
+              <td style="padding:7px 12px;"><span style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:4px;padding:2px 8px;font-family:monospace;color:#085041;font-size:10px;">Data_Type ✓</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:7px 12px;font-weight:600;color:#2C2C2A;">Scale Factor</td>
+              <td style="padding:7px 12px;"><span style="background:#F9F8F4;border:1px dashed #D3D1C7;border-radius:4px;padding:2px 8px;font-family:monospace;color:#bbb;font-size:10px;">skip (not in file)</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:7px 12px;font-weight:600;color:#2C2C2A;">Units</td>
+              <td style="padding:7px 12px;"><span style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:4px;padding:2px 8px;font-family:monospace;color:#085041;font-size:10px;">Units ✓</span></td>
+            </tr>
+            <tr>
+              <td style="padding:7px 12px;font-weight:600;color:#2C2C2A;">R/W Access</td>
+              <td style="padding:7px 12px;"><span style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:4px;padding:2px 8px;font-family:monospace;color:#085041;font-size:10px;">Access ✓</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:10px 12px;border-top:1px solid #F1EFE8;text-align:right;">
+          <div style="display:inline-block;background:#1D9E75;color:#fff;border-radius:6px;padding:5px 14px;font-size:11px;font-weight:600;cursor:pointer;">Preview output →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Output preview with base toggle -->
+  <div>
+    <div style="font-size:11px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:8px;">Step 3 — Review Output</div>
+    <div class="mockup" style="margin:0;">
+      <div class="mockup-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>203 points · Condair DL Humidifier</span>
+        <!-- THE BASE TOGGLE — lives here on the output table -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;color:#888780;font-weight:600;">Address base:</span>
+          <div style="display:flex;align-items:center;gap:0;border:1px solid #D3D1C7;border-radius:6px;overflow:hidden;">
+            <div style="background:#1D9E75;color:#fff;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">0</div>
+            <div style="background:#fff;color:#888780;padding:3px 10px;font-size:11px;cursor:pointer;border-left:1px solid #D3D1C7;">1</div>
+          </div>
+          <span style="font-size:10px;color:#1D9E75;">stored as-is</span>
+        </div>
+      </div>
+      <div class="mockup-body" style="padding:0;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="background:#F9F8F4;border-bottom:1px solid #E8E6DE;">
+              <th style="text-align:left;padding:5px 10px;font-size:10px;color:#888780;">Name</th>
+              <th style="text-align:right;padding:5px 10px;font-size:10px;color:#888780;">Reg</th>
+              <th style="text-align:left;padding:5px 10px;font-size:10px;color:#888780;">FC</th>
+              <th style="text-align:left;padding:5px 10px;font-size:10px;color:#888780;">Type</th>
+              <th style="text-align:left;padding:5px 10px;font-size:10px;color:#888780;">Units</th>
+              <th style="text-align:left;padding:5px 10px;font-size:10px;color:#888780;">R/W</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:5px 10px;color:#2C2C2A;font-size:10px;">Humidity setpoint</td>
+              <td style="padding:5px 10px;color:#1D9E75;font-weight:700;text-align:right;font-family:monospace;font-size:11px;">0</td>
+              <td style="padding:5px 10px;color:#555;font-family:monospace;font-size:10px;">FC4</td>
+              <td style="padding:5px 10px;color:#555;font-family:monospace;font-size:10px;">Float32</td>
+              <td style="padding:5px 10px;color:#555;font-size:10px;">%</td>
+              <td style="padding:5px 10px;"><span style="background:#E1F5EE;color:#085041;font-size:9px;padding:1px 5px;border-radius:3px;font-family:monospace;">R</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:5px 10px;color:#2C2C2A;font-size:10px;">Supply air temp</td>
+              <td style="padding:5px 10px;color:#1D9E75;font-weight:700;text-align:right;font-family:monospace;font-size:11px;">2</td>
+              <td style="padding:5px 10px;color:#555;font-family:monospace;font-size:10px;">FC4</td>
+              <td style="padding:5px 10px;color:#555;font-family:monospace;font-size:10px;">Float32</td>
+              <td style="padding:5px 10px;color:#555;font-size:10px;">°C</td>
+              <td style="padding:5px 10px;"><span style="background:#E1F5EE;color:#085041;font-size:9px;padding:1px 5px;border-radius:3px;font-family:monospace;">R</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:5px 10px;color:#2C2C2A;font-size:10px;">Fan speed</td>
+              <td style="padding:5px 10px;color:#1D9E75;font-weight:700;text-align:right;font-family:monospace;font-size:11px;">4</td>
+              <td style="padding:5px 10px;color:#555;font-family:monospace;font-size:10px;">FC4</td>
+              <td style="padding:5px 10px;color:#555;font-family:monospace;font-size:10px;">UInt16</td>
+              <td style="padding:5px 10px;color:#555;font-size:10px;">%</td>
+              <td style="padding:5px 10px;"><span style="background:#E1F5EE;color:#085041;font-size:9px;padding:1px 5px;border-radius:3px;font-family:monospace;">R</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F1EFE8;">
+              <td style="padding:5px 10px;color:#2C2C2A;font-size:10px;">Active fault code</td>
+              <td style="padding:5px 10px;color:#1D9E75;font-weight:700;text-align:right;font-family:monospace;font-size:11px;">20</td>
+              <td style="padding:5px 10px;color:#555;font-family:monospace;font-size:10px;">FC4</td>
+              <td style="padding:5px 10px;color:#555;font-family:monospace;font-size:10px;">UInt16</td>
+              <td style="padding:5px 10px;color:#555;font-size:10px;">—</td>
+              <td style="padding:5px 10px;"><span style="background:#E1F5EE;color:#085041;font-size:9px;padding:1px 5px;border-radius:3px;font-family:monospace;">R</span></td>
+            </tr>
+            <tr>
+              <td colspan="6" style="padding:5px 10px;color:#aaa;font-size:10px;text-align:center;">… 199 more points</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Toggle = 1 example -->
+        <div style="margin:10px;padding:10px 12px;background:#FFFBF0;border:1px solid #F0C98A;border-radius:6px;font-size:11px;color:#854F0B;">
+          <strong>If you flip to "1":</strong> &nbsp; all register values +1 &nbsp;→&nbsp;
+          <span style="font-family:monospace;background:#FAEEDA;padding:1px 5px;border-radius:3px;">0 → 1</span>&nbsp;
+          <span style="font-family:monospace;background:#FAEEDA;padding:1px 5px;border-radius:3px;">2 → 3</span>&nbsp;
+          <span style="font-family:monospace;background:#FAEEDA;padding:1px 5px;border-radius:3px;">4 → 5</span>&nbsp;
+          <span style="color:#aaa;font-size:10px;">internally still stored as 0-based; toggle just controls how addresses are displayed &amp; exported</span>
+        </div>
+
+        <div style="padding:10px 12px;border-top:1px solid #F1EFE8;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <input class="mock-input" style="width:160px;font-size:11px;" value="Condair DL Humidifier" placeholder="Assembly name…">
+          </div>
+          <div style="display:flex;gap:6px;">
+            <div style="background:#fff;border:1px solid #D3D1C7;border-radius:6px;padding:5px 12px;font-size:11px;color:#888780;cursor:pointer;">← Back</div>
+            <div style="background:#1D9E75;color:#fff;border-radius:6px;padding:5px 14px;font-size:11px;font-weight:600;cursor:pointer;">Save Assembly ✓</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:16px;background:#2C2C2A;color:#F9F8F4;border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.7;">
+  <strong>Key rule:</strong> Internally the app <em>always</em> stores 0-based addresses.
+  The output toggle controls what's shown in the preview table and what gets written to the simulator config + ThingsBoard JSON.
+  Flip it, check the numbers look right, save. That setting travels with the assembly.
+</div>

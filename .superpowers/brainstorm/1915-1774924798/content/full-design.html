@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F9F8F4; color: #2C2C2A; margin: 0; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #888780; font-size: 13px; margin-bottom: 24px; }
+  h2 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #888780; margin: 24px 0 10px; border-top: 1px solid #E8E6DE; padding-top: 16px; }
+  h3 { font-size: 13px; font-weight: 700; color: #2C2C2A; margin: 0 0 6px; }
+  .card { background: #fff; border: 1px solid #D3D1C7; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .pill { display: inline-block; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; font-family: monospace; }
+  .green { background: #E1F5EE; color: #085041; }
+  .orange { background: #FAEEDA; color: #854F0B; }
+  .gray { background: #F1EFE8; color: #888780; }
+  .red { background: #FEE8E8; color: #B91C1C; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 6px 10px; font-size: 10px; font-weight: 600; color: #888780; text-transform: uppercase; background: #F9F8F4; border-bottom: 1px solid #E8E6DE; }
+  td { padding: 6px 10px; border-bottom: 1px solid #F1EFE8; vertical-align: top; }
+  code { background: #F1EFE8; padding: 1px 5px; border-radius: 3px; font-size: 11px; font-family: monospace; }
+  .flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+  .step { border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; text-align: center; min-width: 100px; }
+  .arrow { color: #888780; font-size: 18px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .label { font-size: 10px; font-weight: 600; color: #888780; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  li { margin-bottom: 4px; font-size: 12px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<h1>Supplier File Importer — Full Design</h1>
+<div class="sub">BMS Simulator Companion · Assembly Import Feature · 2026-03-31</div>
+
+<!-- ═══════════════════════════════════ OVERVIEW ══════════════════════════════════ -->
+<h2>1 · What we're building</h2>
+<div class="card">
+  <p style="font-size:13px;line-height:1.7;margin:0 0 12px;">
+    A browser-side importer that reads a supplier's Modbus or BACnet point list (CSV or XLSX),
+    walks the user through a 3-step wizard, and saves a fully-populated <strong>Assembly</strong>
+    to the Assembly Library. All existing steps (Device Setup, Map Points, Sim Values, Generate)
+    are unchanged — they just gain a richer starting point.
+  </p>
+  <div class="flow">
+    <div class="step" style="background:#1D9E7518;border:2px solid #1D9E75;color:#085041;">⓪ Import Supplier File<br><span style="font-size:10px;font-weight:400;">NEW</span></div>
+    <span class="arrow">→</span>
+    <div class="step" style="background:#F1EFE8;color:#555;">① Device Setup<br><span style="font-size:10px;font-weight:400;">Load Assembly</span></div>
+    <span class="arrow">→</span>
+    <div class="step" style="background:#F1EFE8;color:#555;">② Map Points<br><span style="font-size:10px;font-weight:400;">Pre-filled ✓</span></div>
+    <span class="arrow">→</span>
+    <div class="step" style="background:#F1EFE8;color:#555;">③ Sim Values</div>
+    <span class="arrow">→</span>
+    <div class="step" style="background:#F1EFE8;color:#555;">④ Generate</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ 3-STEP WIZARD ══════════════════════════════════ -->
+<h2>2 · The 3-step import wizard</h2>
+
+<div class="grid3">
+  <div class="card">
+    <div class="label">Step 1</div>
+    <h3>Upload &amp; Detect</h3>
+    <ul style="padding-left:16px;margin:8px 0 0;">
+      <li>Drag-drop or browse for <code>.csv</code> or <code>.xlsx</code></li>
+      <li>SheetJS parses in-browser — no server needed</li>
+      <li>If XLSX has multiple sheets → show sheet selector</li>
+      <li>Auto-detect: Modbus vs BACnet (from column names)</li>
+      <li>Override protocol if wrong</li>
+      <li>Show raw row/column count for confirmation</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="label">Step 2</div>
+    <h3>Map Columns</h3>
+    <ul style="padding-left:16px;margin:8px 0 0;">
+      <li>List of target fields (Name, Register/Instance, Data Type, Scale, Units, R/W…)</li>
+      <li>Auto-detect pre-fills matches by column name heuristics</li>
+      <li>Click any pill to assign/change that column</li>
+      <li>Optional fields can be skipped → defaults applied</li>
+      <li>Name the assembly before continuing</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="label">Step 3</div>
+    <h3>Preview &amp; Save</h3>
+    <ul style="padding-left:16px;margin:8px 0 0;">
+      <li>Table of all imported points with mapped values</li>
+      <li><strong>Address base toggle (0 / 1)</strong> in table header — flips all address values live</li>
+      <li>Bad rows flagged in red (missing address / name)</li>
+      <li>Optional: filter to R-only or include W points</li>
+      <li>Save → writes to Assembly Library</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ ADDRESS BASE ══════════════════════════════════ -->
+<h2>3 · Address base toggle — how it works</h2>
+<div class="card">
+  <div class="grid2" style="gap:16px;">
+    <div>
+      <h3 style="margin-bottom:8px;">Toggle is on the preview table (Step 3)</h3>
+      <ul style="padding-left:16px;margin:0;">
+        <li>Column selection (Step 2) is clean — just pick the column</li>
+        <li>In Step 3 header: <code>Address base: [0] [1]</code></li>
+        <li>Toggle <strong>0</strong>: addresses stored exactly as imported</li>
+        <li>Toggle <strong>1</strong>: subtract 1 from every address — stored result is 0-based</li>
+        <li>Values update live in the table — you see the numbers change</li>
+        <li>Same toggle applies to BACnet instance numbers</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="margin-bottom:8px;">Internal storage is always 0-based</h3>
+      <table>
+        <tr><th>Source value</th><th>Toggle</th><th>Stored</th><th>Exported</th></tr>
+        <tr><td><code>0</code></td><td>0-base</td><td><code>0</code></td><td><code>0</code></td></tr>
+        <tr><td><code>1</code></td><td>1-base</td><td><code>0</code></td><td><code>0</code></td></tr>
+        <tr><td><code>100</code></td><td>1-base</td><td><code>99</code></td><td><code>99</code></td></tr>
+        <tr><td><code>100</code></td><td>0-base</td><td><code>100</code></td><td><code>100</code></td></tr>
+      </table>
+      <p style="font-size:11px;color:#888780;margin:6px 0 0;">Simulator config + ThingsBoard JSON always receive 0-based addresses.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TYPE MAPPING ══════════════════════════════════ -->
+<h2>4 · Data type &amp; field normalization</h2>
+<div class="grid2">
+  <div class="card">
+    <div class="label">Modbus data types → SimPoint</div>
+    <table style="margin-top:6px;">
+      <tr><th>Supplier says</th><th>Stored as</th></tr>
+      <tr><td><code>Float32</code>, <code>FLOAT</code>, <code>float</code></td><td><span class="pill green">32float</span></td></tr>
+      <tr><td><code>UInt16</code>, <code>UINT16</code>, <code>uint16</code></td><td><span class="pill green">16uint</span></td></tr>
+      <tr><td><code>Int16</code>, <code>INT16</code>, <code>int16</code></td><td><span class="pill green">16int</span></td></tr>
+      <tr><td><code>UInt32</code>, <code>UINT32</code>, <code>UINT32_HI</code></td><td><span class="pill green">32uint</span></td></tr>
+      <tr><td><code>Int32</code>, <code>INT32</code>, <code>INT32_HI</code></td><td><span class="pill green">32int</span></td></tr>
+      <tr><td><code>BOOL</code>, <code>bool</code>, <code>bit</code>, <code>Bit</code></td><td><span class="pill green">bool</span></td></tr>
+      <tr><td><em>anything else</em></td><td><span class="pill gray">16uint (default)</span> + flag</td></tr>
+    </table>
+    <p style="font-size:11px;color:#888780;margin:8px 0 0;">32-bit types (_HI/_LW pairs) are merged into a single SimPoint consuming 2 registers — the _LW row is skipped.</p>
+  </div>
+  <div class="card">
+    <div class="label">BACnet object types → SimPoint</div>
+    <table style="margin-top:6px;">
+      <tr><th>Supplier says</th><th>Stored as</th></tr>
+      <tr><td><code>AI</code>, <code>AnalogInput</code></td><td><span class="pill orange">analogInput</span></td></tr>
+      <tr><td><code>AO</code>, <code>AnalogOutput</code></td><td><span class="pill orange">analogOutput</span></td></tr>
+      <tr><td><code>AV</code>, <code>AnalogValue</code></td><td><span class="pill orange">analogValue</span></td></tr>
+      <tr><td><code>BI</code>, <code>BinaryInput</code></td><td><span class="pill orange">binaryInput</span></td></tr>
+      <tr><td><code>BV</code>, <code>BinaryValue</code></td><td><span class="pill orange">binaryValue</span></td></tr>
+      <tr><td><code>MV</code>, <code>MSV</code>, <code>MI</code>, <code>MultiState</code></td><td><span class="pill orange">multiStateValue</span></td></tr>
+      <tr><td><code>DEV</code>, <em>device object</em></td><td><span class="pill gray">skip row</span></td></tr>
+    </table>
+    <p style="font-size:11px;color:#888780;margin:8px 0 0;">Formula-based instances (Gree: <code>(N-1)*256+131072</code>) are evaluated with N=1 for the assembly default.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ AUTO-DETECT ══════════════════════════════════ -->
+<h2>5 · Auto-detection heuristics (column name matching)</h2>
+<div class="card">
+  <table>
+    <tr><th>Target field</th><th>Matched column name patterns (case-insensitive)</th></tr>
+    <tr><td><strong>Point name</strong></td><td><code>name</code>, <code>description</code>, <code>object name</code>, <code>parameter</code>, <code>parameter_name</code></td></tr>
+    <tr><td><strong>Register / Instance</strong></td><td><code>register</code>, <code>address</code>, <code>instance</code>, <code>object_id</code>, <code>offset</code></td></tr>
+    <tr><td><strong>Function code</strong></td><td><code>fc</code>, <code>function_code</code>, <code>function code</code></td></tr>
+    <tr><td><strong>Data type</strong></td><td><code>data_type</code>, <code>data type</code>, <code>type</code>, <code>format</code></td></tr>
+    <tr><td><strong>Scale factor</strong></td><td><code>scale</code>, <code>scale_factor</code>, <code>multiplier</code>, <code>factor</code></td></tr>
+    <tr><td><strong>Units</strong></td><td><code>units</code>, <code>unit</code>, <code>eng_range</code> (extract units suffix)</td></tr>
+    <tr><td><strong>Object type (BACnet)</strong></td><td><code>object_type</code>, <code>object type</code>, <code>type</code></td></tr>
+    <tr><td><strong>R/W access</strong></td><td><code>access</code>, <code>r/w</code>, <code>rw</code>, <code>read_write</code></td></tr>
+    <tr><td><strong>Protocol hint</strong></td><td>Modbus if any <code>register/fc/modbus</code> column found; BACnet if <code>object/instance/bacnet</code> found</td></tr>
+  </table>
+  <p style="font-size:11px;color:#888780;margin:8px 0 0;">When multiple columns match the same field (e.g. both <code>Address_0based</code> and <code>Register_Number_1based</code>), all are shown as pills — the closest match is pre-selected, user clicks to override.</p>
+</div>
+
+<!-- ═══════════════════════════════════ DATA MODEL ══════════════════════════════════ -->
+<h2>6 · Data model — what changes</h2>
+<div class="card">
+  <div class="grid2">
+    <div>
+      <h3 style="margin-bottom:8px;">SimPoint — fields populated by importer</h3>
+      <table>
+        <tr><th>Field</th><th>Modbus</th><th>BACnet</th></tr>
+        <tr><td><code>tag</code></td><td>from Name col</td><td>from Name col</td></tr>
+        <tr><td><code>description</code></td><td>from Name col</td><td>from Desc col</td></tr>
+        <tr><td><code>io_type</code></td><td>derived from FC</td><td>derived from obj type</td></tr>
+        <tr><td><code>function_code</code></td><td>from FC col</td><td>—</td></tr>
+        <tr><td><code>register</code></td><td>from Addr col ± base</td><td>—</td></tr>
+        <tr><td><code>data_type</code></td><td>normalized</td><td>—</td></tr>
+        <tr><td><code>scale</code></td><td>from Scale col</td><td>—</td></tr>
+        <tr><td><code>object_type</code></td><td>—</td><td>normalized</td></tr>
+        <tr><td><code>object_instance</code></td><td>—</td><td>from Inst col ± base</td></tr>
+        <tr><td><code>units</code></td><td>from Units col</td><td>from Units col</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3 style="margin-bottom:8px;">DeviceAssembly — new fields added</h3>
+      <div style="font-size:12px;background:#F1EFE8;border-radius:6px;padding:10px 12px;font-family:monospace;line-height:1.8;">
+        id: string<br>
+        name: string<br>
+        description?: string<br>
+        protocol: 'modbus' | 'bacnet'<br>
+        savedAt: string<br>
+        points: SimPoint[]<br>
+        <span style="color:#1D9E75;font-weight:700;">sourceFile?: string &nbsp;&nbsp;// new</span><br>
+        <span style="color:#1D9E75;font-weight:700;">importedAt?: string &nbsp;&nbsp;// new</span>
+      </div>
+      <p style="font-size:11px;color:#888780;margin:8px 0 0;">
+        <code>sourceFile</code> records the original filename for traceability.<br>
+        No other schema changes — <code>SimPoint</code> already has all fields needed.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TECH ══════════════════════════════════ -->
+<h2>7 · Implementation approach</h2>
+<div class="card">
+  <div class="grid2">
+    <div>
+      <h3 style="margin-bottom:8px;">New files</h3>
+      <ul style="padding-left:16px;margin:0;">
+        <li><code>src/components/SupplierImportTab.tsx</code> — the 3-step wizard UI</li>
+        <li><code>src/lib/supplierImport.ts</code> — parsing, mapping, normalization logic</li>
+        <li><code>src/lib/columnDetector.ts</code> — auto-detection heuristics</code></li>
+      </ul>
+      <h3 style="margin-bottom:8px;margin-top:14px;">New dependency</h3>
+      <ul style="padding-left:16px;margin:0;">
+        <li><code>xlsx</code> (SheetJS) — reads CSV + XLSX in-browser, no server</li>
+        <li>~500KB gzipped; widely used, actively maintained</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="margin-bottom:8px;">Where it lives in the UI</h3>
+      <ul style="padding-left:16px;margin:0;">
+        <li>New tab in the app nav: <strong>"⊕ Supplier Import"</strong></li>
+        <li>Sits alongside (not replacing) the existing 5-step workflow</li>
+        <li>After saving an assembly → app navigates to Device Setup and highlights the new assembly in the library</li>
+        <li>Works for both new projects and adding to existing ones</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ SCOPE ══════════════════════════════════ -->
+<h2>8 · In scope / out of scope</h2>
+<div class="grid2">
+  <div class="card" style="border-color:#A7DFC8;">
+    <div class="label" style="color:#085041;">✓ In scope</div>
+    <ul style="padding-left:16px;margin:0;">
+      <li>CSV and XLSX import</li>
+      <li>Multi-sheet XLSX (sheet selector)</li>
+      <li>Modbus + BACnet protocols</li>
+      <li>Auto column detection with manual override</li>
+      <li>Address base 0/1 toggle on preview</li>
+      <li>Data type normalisation (all 5 supplier formats)</li>
+      <li>32-bit register pair merging (_HI/_LW)</li>
+      <li>DEV / non-simulated object type skipping</li>
+      <li>Save to Assembly Library with source filename</li>
+      <li>Navigate to Device Setup after save</li>
+    </ul>
+  </div>
+  <div class="card" style="border-color:#F0C98A;">
+    <div class="label" style="color:#854F0B;">✗ Out of scope (v1)</div>
+    <ul style="padding-left:16px;margin:0;">
+      <li>Formula-based BACnet instances (Gree) — N=1 default only</li>
+      <li>Enum value import (Notes / Enum_Values columns)</li>
+      <li>Alarm code reference sheets (Daikin)</li>
+      <li>Editing points during the import wizard</li>
+      <li>Saving column mapping as a reusable template</li>
+      <li>Direct import from URL / cloud storage</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

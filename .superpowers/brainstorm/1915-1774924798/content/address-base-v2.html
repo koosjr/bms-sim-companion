@@ -1,0 +1,115 @@
+<h2>Address Base — Revised Behaviour</h2>
+<p class="subtitle">Display address = what the engineer sees (matches the manual). Stored/exported = always 0-based. They can differ — that's the point.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+  <!-- What changes -->
+  <div>
+    <div style="font-size:11px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:8px;">The rule</div>
+    <div style="background:#fff;border:1px solid #D3D1C7;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.8;">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #F1EFE8;">
+        <span style="background:#E1F5EE;color:#085041;border-radius:5px;padding:2px 8px;font-size:11px;font-family:monospace;font-weight:700;">stored</span>
+        <span style="color:#555;">Always 0-based. This is what the simulator<br>and ThingsBoard JSON receive.</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span style="background:#FAEEDA;color:#854F0B;border-radius:5px;padding:2px 8px;font-size:11px;font-family:monospace;font-weight:700;">display</span>
+        <span style="color:#555;">Shown in the UI. Matches the supplier's manual<br>so engineers can cross-reference easily.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toggle explanation -->
+  <div>
+    <div style="font-size:11px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:8px;">What the toggle does</div>
+    <div style="background:#fff;border:1px solid #D3D1C7;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.7;">
+      <div style="margin-bottom:8px;">
+        <span style="font-weight:700;">Toggle = 0 </span><span style="color:#888780;">(source is already 0-based)</span><br>
+        <span style="font-family:monospace;font-size:11px;">display = stored = raw value</span>
+      </div>
+      <div>
+        <span style="font-weight:700;">Toggle = 1 </span><span style="color:#888780;">(source is 1-based)</span><br>
+        <span style="font-family:monospace;font-size:11px;">stored = raw − 1<br>display = stored + 1 &nbsp;(= raw, what manual shows)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Concrete examples table -->
+<div style="background:#fff;border:1px solid #D3D1C7;border-radius:10px;overflow:hidden;margin-bottom:20px;">
+  <div style="background:#F9F8F4;border-bottom:1px solid #E8E6DE;padding:10px 16px;font-size:11px;font-weight:700;color:#2C2C2A;display:flex;align-items:center;justify-content:space-between;">
+    <span>Preview table — Condair Modbus (203 points)</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:#888780;font-weight:400;">Source addressing:</span>
+      <div style="display:flex;border:1px solid #D3D1C7;border-radius:6px;overflow:hidden;">
+        <div style="background:#fff;color:#888780;padding:3px 12px;font-size:11px;cursor:pointer;">0-base</div>
+        <div style="background:#1D9E75;color:#fff;padding:3px 12px;font-size:11px;font-weight:700;cursor:pointer;border-left:1px solid #D3D1C7;">1-base</div>
+      </div>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#F9F8F4;">
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;border-bottom:1px solid #E8E6DE;">Point name</th>
+        <th style="text-align:right;padding:7px 14px;font-size:10px;color:#854F0B;font-weight:700;text-transform:uppercase;border-bottom:1px solid #E8E6DE;">Display addr</th>
+        <th style="text-align:right;padding:7px 14px;font-size:10px;color:#085041;font-weight:700;text-transform:uppercase;border-bottom:1px solid #E8E6DE;">Stored (0-base)</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;border-bottom:1px solid #E8E6DE;">FC</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;border-bottom:1px solid #E8E6DE;">Type</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;border-bottom:1px solid #E8E6DE;">Scale</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;border-bottom:1px solid #E8E6DE;">Units</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #F1EFE8;">
+        <td style="padding:7px 14px;color:#2C2C2A;">Humidity setpoint</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#854F0B;">1</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#085041;">0</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;">FC4</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;">Float32</td>
+        <td style="padding:7px 14px;font-size:11px;color:#aaa;">—</td>
+        <td style="padding:7px 14px;font-size:11px;">%</td>
+      </tr>
+      <tr style="border-bottom:1px solid #F1EFE8;">
+        <td style="padding:7px 14px;color:#2C2C2A;">Supply air temp</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#854F0B;">3</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#085041;">2</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;">FC4</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;">Float32</td>
+        <td style="padding:7px 14px;font-size:11px;color:#aaa;">—</td>
+        <td style="padding:7px 14px;font-size:11px;">°C</td>
+      </tr>
+      <tr style="border-bottom:1px solid #F1EFE8;">
+        <td style="padding:7px 14px;color:#2C2C2A;">Fan speed</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#854F0B;">5</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#085041;">4</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;">FC4</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;">UInt16</td>
+        <td style="padding:7px 14px;font-size:11px;color:#aaa;">—</td>
+        <td style="padding:7px 14px;font-size:11px;">%</td>
+      </tr>
+      <tr style="border-bottom:1px solid #F1EFE8;">
+        <td style="padding:7px 14px;color:#2C2C2A;">Active fault code</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#854F0B;">21</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#085041;">20</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;">FC4</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;">UInt16</td>
+        <td style="padding:7px 14px;font-size:11px;color:#aaa;">—</td>
+        <td style="padding:7px 14px;font-size:11px;">—</td>
+      </tr>
+      <tr>
+        <td colspan="7" style="padding:6px 14px;color:#aaa;font-size:11px;text-align:center;">… 199 more points</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="padding:10px 14px;background:#F9F8F4;border-top:1px solid #F1EFE8;font-size:11px;color:#555;display:flex;gap:20px;">
+    <span><span style="color:#854F0B;font-weight:700;">Display addr</span> = what the manual says — engineers can check against the datasheet</span>
+    <span><span style="color:#085041;font-weight:700;">Stored</span> = what goes to simulator + ThingsBoard — always 0-based</span>
+  </div>
+</div>
+
+<!-- Also applies in Map Points tab -->
+<div style="background:#2C2C2A;color:#F9F8F4;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.7;">
+  <strong>This also carries through to the Map Points tab.</strong> When you load an assembly into a device,
+  the Map Points table shows both columns — <span style="color:#F0C98A;">Display</span> for cross-referencing the manual,
+  <span style="color:#A7DFC8;">Stored</span> for what gets exported.
+  Engineers can verify addresses without mental arithmetic.
+</div>

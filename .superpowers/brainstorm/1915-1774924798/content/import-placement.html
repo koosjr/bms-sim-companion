@@ -1,0 +1,76 @@
+<h2>Where does the importer live?</h2>
+<p class="subtitle">The current app has a 5-step workflow. The supplier file importer needs to plug in somewhere. Which approach fits best?</p>
+
+<div style="background:#F9F8F4;border:1px solid #E8E6DE;border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+  <div style="font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Current Flow</div>
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <div style="background:#1D9E75;color:#fff;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;">① Import BMSHub JSON</div>
+    <span style="color:#888780;font-size:16px;">→</span>
+    <div style="background:#fff;border:1px solid #D3D1C7;border-radius:6px;padding:5px 12px;font-size:12px;color:#2C2C2A;">② Device Setup</div>
+    <span style="color:#888780;font-size:16px;">→</span>
+    <div style="background:#fff;border:1px solid #D3D1C7;border-radius:6px;padding:5px 12px;font-size:12px;color:#2C2C2A;">③ Map Points</div>
+    <span style="color:#888780;font-size:16px;">→</span>
+    <div style="background:#fff;border:1px solid #D3D1C7;border-radius:6px;padding:5px 12px;font-size:12px;color:#2C2C2A;">④ Sim Values</div>
+    <span style="color:#888780;font-size:16px;">→</span>
+    <div style="background:#fff;border:1px solid #D3D1C7;border-radius:6px;padding:5px 12px;font-size:12px;color:#2C2C2A;">⑤ Generate</div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Replace Step 1 with dual entry</h3>
+      <p>Step 1 gains two tabs: <em>"From BMSHub"</em> and <em>"From Supplier File"</em>. Supplier import creates the same data structure as a BMSHub import. Rest of the workflow is unchanged — device setup, point mapping, sim values all work exactly as today.</p>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div style="background:#1D9E75;color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;">① Import<br><span style="font-size:10px;opacity:.8">BMSHub · Supplier</span></div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">② Device Setup</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">③ Map Points</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">④ Sim Values</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">⑤ Generate</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Add points inside Device Setup (Step 2)</h3>
+      <p>Keep Step 1 for BMSHub imports. Add a <em>"Load points from file…"</em> button per device in Step 2. The supplier file populates that device's point list, including register addresses and BACnet instances already filled in. Great for mixing device sources in one project.</p>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">① Import BMSHub</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#1D9E75;color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;">② Device Setup<br><span style="font-size:10px;opacity:.8">+ load from file</span></div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">③ Map Points</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">④ Sim Values</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">⑤ Generate</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Standalone converter tool (separate page)</h3>
+      <p>Add a dedicated <em>"Import Supplier File"</em> utility outside the main workflow. It converts CSV/XLSX → a BMSHub-compatible JSON that you then import via Step 1. No changes to existing steps — BMSHub JSON stays the canonical format. Best if you want a reusable converter for team use.</p>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div style="background:#854F0B22;color:#854F0B;border:1px solid #854F0B44;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;">⓪ Convert File<br><span style="font-size:10px;opacity:.8">→ BMSHub JSON</span></div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">① Import BMSHub</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">② Device Setup</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">③ Map Points</div>
+        <span style="color:#888780;">→</span>
+        <div style="background:#f0f0f0;border-radius:6px;padding:4px 10px;font-size:11px;color:#666;">⑤ Generate</div>
+      </div>
+    </div>
+  </div>
+</div>

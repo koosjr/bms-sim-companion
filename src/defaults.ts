@@ -93,6 +93,7 @@ export function defaultDeviceFromImport(imported: ImportedDevice, index: number)
     id: uuidv4(),
     source_id: imported.id,
     name: imported.name,
+    profile_name: imported.profile_name || imported.name,
     description: imported.description,
     protocol: 'modbus',
     ip_address: `192.168.1.${101 + index}`,

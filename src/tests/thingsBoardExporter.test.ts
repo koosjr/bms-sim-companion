@@ -10,7 +10,7 @@ const MODBUS_POINT: SimPoint = {
 };
 
 const MODBUS_DEVICE: SimDevice = {
-  id: 'd1', source_id: 's1', name: 'AHU1', description: '',
+  id: 'd1', source_id: 's1', name: 'AHU1', profile_name: 'AHU', description: '',
   protocol: 'modbus', ip_address: '192.168.1.101',
   modbus_port: 502, unit_id: 1, byte_order: 'big', word_order: 'big',
   bacnet_port: 47808, device_instance: 1001, device_name: 'AHU1', vendor_id: 999,

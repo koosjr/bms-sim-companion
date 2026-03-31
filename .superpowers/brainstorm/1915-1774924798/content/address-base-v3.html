@@ -1,0 +1,120 @@
+<h2>Address Base — Final Behaviour</h2>
+<p class="subtitle">One address column. What you imported is what you see. The toggle only affects what gets exported.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+  <div style="background:#fff;border:1px solid #D3D1C7;border-radius:10px;padding:16px;">
+    <div style="font-size:11px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:10px;">The rule</div>
+    <div style="font-size:13px;line-height:2;color:#2C2C2A;">
+      <div style="padding:6px 10px;background:#F9F8F4;border-radius:6px;margin-bottom:6px;">
+        <strong>Screen always shows:</strong> raw imported value
+      </div>
+      <div style="padding:6px 10px;background:#E1F5EE;border-radius:6px;margin-bottom:6px;">
+        <strong>Toggle = 0</strong> (default) → export = screen value
+      </div>
+      <div style="padding:6px 10px;background:#FAEEDA;border-radius:6px;">
+        <strong>Toggle = 1</strong> → export = screen value − 1
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #D3D1C7;border-radius:10px;padding:16px;">
+    <div style="font-size:11px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:10px;">Example</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="background:#F9F8F4;border-bottom:1px solid #E8E6DE;">
+          <th style="padding:6px 10px;text-align:left;font-size:10px;color:#888780;font-weight:600;">On screen</th>
+          <th style="padding:6px 10px;text-align:right;font-size:10px;color:#1D9E75;font-weight:700;">Toggle = 0<br>Exported</th>
+          <th style="padding:6px 10px;text-align:right;font-size:10px;color:#D4871A;font-weight:700;">Toggle = 1<br>Exported</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #F1EFE8;"><td style="padding:5px 10px;font-family:monospace;">1</td><td style="padding:5px 10px;text-align:right;font-family:monospace;color:#1D9E75;">1</td><td style="padding:5px 10px;text-align:right;font-family:monospace;color:#D4871A;">0</td></tr>
+        <tr style="border-bottom:1px solid #F1EFE8;"><td style="padding:5px 10px;font-family:monospace;">3</td><td style="padding:5px 10px;text-align:right;font-family:monospace;color:#1D9E75;">3</td><td style="padding:5px 10px;text-align:right;font-family:monospace;color:#D4871A;">2</td></tr>
+        <tr style="border-bottom:1px solid #F1EFE8;"><td style="padding:5px 10px;font-family:monospace;">100</td><td style="padding:5px 10px;text-align:right;font-family:monospace;color:#1D9E75;">100</td><td style="padding:5px 10px;text-align:right;font-family:monospace;color:#D4871A;">99</td></tr>
+        <tr><td style="padding:5px 10px;font-family:monospace;">256</td><td style="padding:5px 10px;text-align:right;font-family:monospace;color:#1D9E75;">256</td><td style="padding:5px 10px;text-align:right;font-family:monospace;color:#D4871A;">255</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Preview table mockup -->
+<div style="background:#fff;border:1px solid #D3D1C7;border-radius:10px;overflow:hidden;margin-bottom:16px;">
+  <div style="background:#F9F8F4;border-bottom:1px solid #E8E6DE;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="font-size:12px;font-weight:600;color:#2C2C2A;">203 points · Condair DL Humidifier</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:#888780;">Address base:</span>
+      <div style="display:flex;border:1px solid #D3D1C7;border-radius:6px;overflow:hidden;font-size:11px;">
+        <div style="background:#1D9E75;color:#fff;padding:3px 12px;font-weight:700;cursor:pointer;">0</div>
+        <div style="background:#fff;color:#888780;padding:3px 12px;cursor:pointer;border-left:1px solid #D3D1C7;">1</div>
+      </div>
+      <span style="font-size:10px;color:#1D9E75;">exported as-is</span>
+    </div>
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#F9F8F4;border-bottom:1px solid #E8E6DE;">
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;">Point name</th>
+        <th style="text-align:right;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;">Address</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;">FC</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;">Data type</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;">Scale</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;">Units</th>
+        <th style="text-align:left;padding:7px 14px;font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;">R/W</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #F1EFE8;">
+        <td style="padding:7px 14px;color:#2C2C2A;">Humidity setpoint</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#2C2C2A;">1</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;color:#555;">FC4</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;color:#555;">Float32</td>
+        <td style="padding:7px 14px;font-size:11px;color:#aaa;">—</td>
+        <td style="padding:7px 14px;font-size:11px;color:#555;">%</td>
+        <td style="padding:7px 14px;"><span style="background:#E1F5EE;color:#085041;font-size:10px;padding:1px 6px;border-radius:3px;font-family:monospace;">R</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid #F1EFE8;">
+        <td style="padding:7px 14px;color:#2C2C2A;">Supply air temp</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#2C2C2A;">3</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;color:#555;">FC4</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;color:#555;">Float32</td>
+        <td style="padding:7px 14px;font-size:11px;color:#aaa;">—</td>
+        <td style="padding:7px 14px;font-size:11px;color:#555;">°C</td>
+        <td style="padding:7px 14px;"><span style="background:#E1F5EE;color:#085041;font-size:10px;padding:1px 6px;border-radius:3px;font-family:monospace;">R</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid #F1EFE8;">
+        <td style="padding:7px 14px;color:#2C2C2A;">Fan speed</td>
+        <td style="padding:7px 14px;text-align:right;font-family:monospace;font-weight:700;color:#2C2C2A;">5</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;color:#555;">FC4</td>
+        <td style="padding:7px 14px;font-family:monospace;font-size:11px;color:#555;">UInt16</td>
+        <td style="padding:7px 14px;font-size:11px;color:#aaa;">—</td>
+        <td style="padding:7px 14px;font-size:11px;color:#555;">%</td>
+        <td style="padding:7px 14px;"><span style="background:#E1F5EE;color:#085041;font-size:10px;padding:1px 6px;border-radius:3px;font-family:monospace;">R</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Flipped state hint -->
+  <div style="margin:10px 14px;padding:10px 12px;background:#FFF8EE;border:1px solid #F0C98A;border-radius:6px;font-size:11px;color:#854F0B;display:flex;align-items:center;gap:12px;">
+    <div>
+      <strong>If you flip to "1":</strong> the toggle reads <em>"exported as screen − 1"</em>.<br>
+      Address column still shows 1, 3, 5 — simulator and ThingsBoard receive 0, 2, 4.
+    </div>
+    <div style="display:flex;border:1px solid #D3D1C7;border-radius:6px;overflow:hidden;font-size:11px;flex-shrink:0;">
+      <div style="background:#fff;color:#888780;padding:3px 12px;cursor:pointer;border-right:1px solid #D3D1C7;">0</div>
+      <div style="background:#D4871A;color:#fff;padding:3px 12px;font-weight:700;cursor:pointer;">1</div>
+    </div>
+  </div>
+
+  <div style="padding:10px 14px;border-top:1px solid #F1EFE8;display:flex;justify-content:space-between;align-items:center;background:#F9F8F4;">
+    <input style="background:#fff;border:1px solid #D3D1C7;border-radius:6px;padding:5px 10px;font-size:12px;width:200px;" value="Condair DL Humidifier">
+    <div style="background:#1D9E75;color:#fff;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;">Save Assembly →</div>
+  </div>
+</div>
+
+<div style="background:#2C2C2A;color:#F9F8F4;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.7;">
+  <strong>No surprises.</strong> The address you see is always the address from the file.
+  The toggle is a correction knob — default off (0), flip to 1 if you discover the source was 1-based.
+  The adjustment happens silently at export time only.
+</div>

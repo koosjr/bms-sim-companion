@@ -1,0 +1,168 @@
+<h2>Column Mapping — with Address Base Toggle</h2>
+<p class="subtitle">Mockup of the mapping step. The base toggle is part of the address row itself — click the column, set the base, done.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Step 2 of 3 — Map Columns &nbsp;·&nbsp; <span style="color:#1D9E75">Condair_Modbus_Points.csv</span> &nbsp;·&nbsp; 203 rows detected</div>
+  <div class="mockup-body" style="padding:0;">
+
+    <!-- Protocol pill -->
+    <div style="padding:12px 16px;border-bottom:1px solid #F1EFE8;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:11px;font-weight:600;color:#888780;">Protocol detected:</span>
+      <span style="background:#E1F5EE;color:#085041;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;font-family:monospace;">MODBUS</span>
+      <span style="font-size:11px;color:#aaa;">(change if wrong)</span>
+      <div style="margin-left:auto;display:flex;gap:6px;">
+        <div style="background:#E1F5EE;color:#085041;border:2px solid #1D9E75;border-radius:6px;padding:3px 12px;font-size:11px;font-weight:700;cursor:pointer;">Modbus</div>
+        <div style="background:#fff;color:#888780;border:1px solid #D3D1C7;border-radius:6px;padding:3px 12px;font-size:11px;cursor:pointer;">BACnet</div>
+      </div>
+    </div>
+
+    <!-- Mapping table -->
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="background:#F9F8F4;border-bottom:1px solid #E8E6DE;">
+          <th style="text-align:left;padding:8px 14px;font-size:10px;font-weight:600;color:#888780;text-transform:uppercase;width:160px;">Field</th>
+          <th style="text-align:left;padding:8px 14px;font-size:10px;font-weight:600;color:#888780;text-transform:uppercase;">Select source column</th>
+          <th style="text-align:left;padding:8px 14px;font-size:10px;font-weight:600;color:#888780;text-transform:uppercase;width:180px;">Sample value</th>
+          <th style="text-align:left;padding:8px 14px;font-size:10px;font-weight:600;color:#888780;text-transform:uppercase;width:120px;">Base</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Point name -->
+        <tr style="border-bottom:1px solid #F1EFE8;">
+          <td style="padding:10px 14px;font-weight:600;color:#2C2C2A;">Point Name <span style="color:#E24B4A">*</span></td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <div style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:5px;padding:3px 9px;font-size:11px;color:#085041;font-family:monospace;cursor:pointer;">Name ✓</div>
+              <div style="background:#F9F8F4;border:1px solid #D3D1C7;border-radius:5px;padding:3px 9px;font-size:11px;color:#888780;font-family:monospace;cursor:pointer;">Notes</div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;color:#555;font-family:monospace;font-size:11px;">Humidity setpoint</td>
+          <td style="padding:10px 14px;color:#aaa;font-size:11px;">—</td>
+        </tr>
+
+        <!-- Register address — KEY ROW -->
+        <tr style="border-bottom:1px solid #F1EFE8;background:#FFFEF9;">
+          <td style="padding:10px 14px;font-weight:600;color:#2C2C2A;">Register Address <span style="color:#E24B4A">*</span></td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <div style="background:#F9F8F4;border:1px solid #D3D1C7;border-radius:5px;padding:3px 9px;font-size:11px;color:#888780;font-family:monospace;cursor:pointer;">Register_Number_1based</div>
+              <div style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:5px;padding:3px 9px;font-size:11px;color:#085041;font-family:monospace;cursor:pointer;">Address_0based ✓</div>
+              <div style="background:#F9F8F4;border:1px solid #D3D1C7;border-radius:5px;padding:3px 9px;font-size:11px;color:#888780;font-family:monospace;cursor:pointer;">Number_Part_1based</div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;color:#555;font-family:monospace;font-size:11px;">0</td>
+          <!-- Base toggle — THIS IS THE KEY UI -->
+          <td style="padding:10px 14px;">
+            <div style="display:flex;align-items:center;gap:0;border:1px solid #D3D1C7;border-radius:6px;overflow:hidden;width:fit-content;">
+              <div style="background:#1D9E75;color:#fff;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">0-base</div>
+              <div style="background:#fff;color:#888780;padding:4px 10px;font-size:11px;cursor:pointer;border-left:1px solid #D3D1C7;">1-base</div>
+            </div>
+            <div style="font-size:10px;color:#aaa;margin-top:3px;">stored as-is</div>
+          </td>
+        </tr>
+
+        <!-- 1-base example row (for contrast) -->
+        <tr style="border-bottom:1px solid #F1EFE8;background:#FFF8F0;">
+          <td style="padding:10px 14px;font-size:11px;color:#888780;padding-left:28px;">↳ if you chose 1-based instead:</td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <div style="background:#FAEEDA;border:2px solid #D4871A;border-radius:5px;padding:3px 9px;font-size:11px;color:#854F0B;font-family:monospace;cursor:pointer;">Register_Number_1based ✓</div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;color:#554;font-family:monospace;font-size:11px;">1</td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;align-items:center;gap:0;border:1px solid #D3D1C7;border-radius:6px;overflow:hidden;width:fit-content;">
+              <div style="background:#fff;color:#888780;padding:4px 10px;font-size:11px;cursor:pointer;">0-base</div>
+              <div style="background:#D4871A;color:#fff;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;border-left:1px solid #D3D1C7;">1-base</div>
+            </div>
+            <div style="font-size:10px;color:#D4871A;margin-top:3px;">−1 applied → stored as 0</div>
+          </td>
+        </tr>
+
+        <!-- Function code -->
+        <tr style="border-bottom:1px solid #F1EFE8;">
+          <td style="padding:10px 14px;font-weight:600;color:#2C2C2A;">Function Code</td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <div style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:5px;padding:3px 9px;font-size:11px;color:#085041;font-family:monospace;cursor:pointer;">Function_Code ✓</div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;color:#555;font-family:monospace;font-size:11px;">4</td>
+          <td style="padding:10px 14px;color:#aaa;font-size:11px;">—</td>
+        </tr>
+
+        <!-- Data type -->
+        <tr style="border-bottom:1px solid #F1EFE8;">
+          <td style="padding:10px 14px;font-weight:600;color:#2C2C2A;">Data Type</td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <div style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:5px;padding:3px 9px;font-size:11px;color:#085041;font-family:monospace;cursor:pointer;">Data_Type ✓</div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;color:#555;font-family:monospace;font-size:11px;">Float32</td>
+          <td style="padding:10px 14px;color:#aaa;font-size:11px;">—</td>
+        </tr>
+
+        <!-- Scale -->
+        <tr style="border-bottom:1px solid #F1EFE8;">
+          <td style="padding:10px 14px;font-weight:600;color:#2C2C2A;">Scale Factor</td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <div style="background:#F9F8F4;border:1px dashed #D3D1C7;border-radius:5px;padding:3px 9px;font-size:11px;color:#aaa;cursor:pointer;">not in this file — skip</div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;color:#aaa;font-size:11px;">—</td>
+          <td style="padding:10px 14px;color:#aaa;font-size:11px;">—</td>
+        </tr>
+
+        <!-- Units -->
+        <tr style="border-bottom:1px solid #F1EFE8;">
+          <td style="padding:10px 14px;font-weight:600;color:#2C2C2A;">Units</td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <div style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:5px;padding:3px 9px;font-size:11px;color:#085041;font-family:monospace;cursor:pointer;">Units ✓</div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;color:#555;font-family:monospace;font-size:11px;">°C</td>
+          <td style="padding:10px 14px;color:#aaa;font-size:11px;">—</td>
+        </tr>
+
+        <!-- Access -->
+        <tr>
+          <td style="padding:10px 14px;font-weight:600;color:#2C2C2A;">R/W Access</td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <div style="background:#E1F5EE;border:2px solid #1D9E75;border-radius:5px;padding:3px 9px;font-size:11px;color:#085041;font-family:monospace;cursor:pointer;">Access ✓</div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;color:#555;font-family:monospace;font-size:11px;">R</td>
+          <td style="padding:10px 14px;color:#aaa;font-size:11px;">—</td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <!-- Bottom action bar -->
+    <div style="padding:12px 16px;border-top:1px solid #F1EFE8;display:flex;align-items:center;justify-content:space-between;background:#F9F8F4;border-radius:0 0 8px 8px;">
+      <div style="font-size:12px;color:#555;">
+        Assembly name: &nbsp;
+        <span style="background:#fff;border:1px solid #D3D1C7;border-radius:5px;padding:3px 10px;font-size:12px;">Condair DL Humidifier</span>
+        &nbsp; → save to <strong>Assembly Library</strong>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <div style="background:#fff;border:1px solid #D3D1C7;border-radius:6px;padding:6px 14px;font-size:12px;color:#888780;cursor:pointer;">← Back</div>
+        <div style="background:#1D9E75;color:#fff;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Preview 203 points →</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top:16px;background:#F9F8F4;border:1px solid #E8E6DE;border-radius:8px;padding:12px 16px;font-size:12px;color:#555;line-height:1.7;">
+  <strong>How it works:</strong>
+  Each row in the table = one field the simulator needs. You click a column pill to assign it.
+  For the address row, the <strong>0-base / 1-base toggle</strong> sits right next to it — select your column, flip the toggle if needed.
+  "stored as-is" or "−1 applied" shown immediately so there's no ambiguity.
+  Optional fields (scale, access) can be skipped — the importer uses defaults.
+</div>

@@ -1,0 +1,136 @@
+<h2>Option D — Full Assembly Import</h2>
+<p class="subtitle">Import a supplier CSV/XLSX → get a fully-populated Assembly (addresses, data types, scale, units) ready to load into any device.</p>
+
+<!-- Flow diagram -->
+<div style="margin-bottom:28px;">
+  <div style="font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">New Flow</div>
+  <div style="display:flex;align-items:stretch;gap:0;flex-wrap:wrap;">
+
+    <!-- Step 0: New importer -->
+    <div style="background:#1D9E7511;border:2px solid #1D9E75;border-radius:10px;padding:12px 16px;min-width:140px;flex:1;">
+      <div style="font-size:10px;font-weight:700;color:#085041;text-transform:uppercase;margin-bottom:4px;">⓪ New: Import Supplier File</div>
+      <div style="font-size:11px;color:#085041;line-height:1.5;">
+        CSV or XLSX<br>
+        Map columns →<br>
+        <strong>Save as Assembly</strong>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;padding:0 6px;color:#888780;font-size:18px;">→</div>
+
+    <!-- Step 1 -->
+    <div style="background:#F9F8F4;border:1px solid #D3D1C7;border-radius:10px;padding:12px 16px;min-width:120px;flex:1;">
+      <div style="font-size:10px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:4px;">① Device Setup</div>
+      <div style="font-size:11px;color:#555;line-height:1.5;">
+        Add device<br>
+        <strong style="color:#085041;">Load Assembly ✓</strong><br>
+        <em style="color:#aaa;">All points pre-filled</em>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;padding:0 6px;color:#888780;font-size:18px;">→</div>
+
+    <!-- Step 2 -->
+    <div style="background:#F9F8F4;border:1px solid #D3D1C7;border-radius:10px;padding:12px 16px;min-width:120px;flex:1;">
+      <div style="font-size:10px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:4px;">② Map Points</div>
+      <div style="font-size:11px;color:#555;line-height:1.5;">
+        Registers &amp; instances<br>
+        <strong style="color:#085041;">already populated</strong><br>
+        <em style="color:#aaa;">Just review/adjust</em>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;padding:0 6px;color:#888780;font-size:18px;">→</div>
+
+    <!-- Step 3 -->
+    <div style="background:#F9F8F4;border:1px solid #D3D1C7;border-radius:10px;padding:12px 16px;min-width:120px;flex:1;">
+      <div style="font-size:10px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:4px;">③ Sim Values</div>
+      <div style="font-size:11px;color:#555;line-height:1.5;">
+        Set base values<br>
+        noise %<br>
+        <em style="color:#aaa;">as before</em>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;padding:0 6px;color:#888780;font-size:18px;">→</div>
+
+    <!-- Step 4 -->
+    <div style="background:#F9F8F4;border:1px solid #D3D1C7;border-radius:10px;padding:12px 16px;min-width:100px;flex:1;">
+      <div style="font-size:10px;font-weight:700;color:#888780;text-transform:uppercase;margin-bottom:4px;">④ Generate</div>
+      <div style="font-size:11px;color:#555;line-height:1.5;">
+        Docker compose<br>
+        config files<br>
+        <em style="color:#aaa;">as before</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- What gets captured -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+
+  <div style="background:#E1F5EE;border:1px solid #A7DFC8;border-radius:10px;padding:14px 16px;">
+    <div style="font-size:11px;font-weight:700;color:#085041;text-transform:uppercase;margin-bottom:8px;">Modbus fields captured</div>
+    <div style="font-size:12px;color:#085041;line-height:1.8;">
+      ✓ Register address (0-based or 1-based)<br>
+      ✓ Function code (FC3/FC4 etc.)<br>
+      ✓ Data type (UINT16, INT32, Float32…)<br>
+      ✓ Scale factor (÷10, ÷100 etc.)<br>
+      ✓ Units (°C, kPa, %, kW…)<br>
+      ✓ Read/Write access<br>
+      ✓ Point name / description<br>
+      ✓ Min / Max range
+    </div>
+  </div>
+
+  <div style="background:#FAEEDA;border:1px solid #F0C98A;border-radius:10px;padding:14px 16px;">
+    <div style="font-size:11px;font-weight:700;color:#854F0B;text-transform:uppercase;margin-bottom:8px;">BACnet fields captured</div>
+    <div style="font-size:12px;color:#854F0B;line-height:1.8;">
+      ✓ Object type (AI, AO, BI, AV, MV…)<br>
+      ✓ Object instance (number or formula)<br>
+      ✓ Units (°C, kPa, %, kW…)<br>
+      ✓ COV increment (derived from range)<br>
+      ✓ Read/Write access<br>
+      ✓ Object name / description<br>
+      ✓ Enum values (for multistate)<br>
+      ✓ Group / category
+    </div>
+  </div>
+</div>
+
+<!-- The key challenge: column mapping -->
+<div style="background:#fff;border:1px solid #D3D1C7;border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+  <div style="font-size:11px;font-weight:700;color:#2C2C2A;text-transform:uppercase;margin-bottom:8px;">The challenge: every supplier names columns differently</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:11px;">
+
+    <div>
+      <div style="font-weight:600;color:#888780;margin-bottom:4px;">Condair Modbus</div>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Register_Number_1based</code>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Data_Type</code>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Function_Code</code>
+    </div>
+
+    <div>
+      <div style="font-weight:600;color:#888780;margin-bottom:4px;">DSE GenComm</div>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Modbus_Address_1Based</code>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Data_Type</code>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Scale_Factor</code>
+    </div>
+
+    <div>
+      <div style="font-weight:600;color:#888780;margin-bottom:4px;">Daikin BACnet</div>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Instance</code>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Object Type</code>
+      <code style="background:#F1EFE8;padding:2px 5px;border-radius:3px;font-size:10px;display:block;margin:2px 0;">Range / Units</code>
+    </div>
+  </div>
+  <div style="margin-top:10px;font-size:12px;color:#555;">
+    → The importer needs a <strong>column mapping step</strong> — tell it which of your columns maps to Register, Data Type, Scale, Units, etc.
+    Smart auto-detection can pre-fill most matches; you just confirm or adjust.
+  </div>
+</div>
+
+<div style="background:#2C2C2A;color:#F9F8F4;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.7;">
+  <strong>Result:</strong> A named Assembly in your library — e.g. <em>"Condair DL Humidifier"</em>, 40 points, Modbus, all registers + data types filled.
+  One click in Device Setup loads it into any device. Reusable across projects.
+</div>

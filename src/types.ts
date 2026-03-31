@@ -13,6 +13,7 @@ export interface ImportedPoint {
 export interface ImportedDevice {
   id: string;
   name: string;
+  profile_name?: string;   // TB device profile — same for all devices of same type
   description: string;
   points: ImportedPoint[];
 }
@@ -70,6 +71,7 @@ export interface SimDevice {
   id: string;
   source_id: string;       // ImportedDevice.id this was derived from
   name: string;
+  profile_name: string;    // TB device profile — same for all devices of same type
   description: string;
   protocol: Protocol;
   ip_address: string;

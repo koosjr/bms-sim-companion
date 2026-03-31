@@ -40,7 +40,7 @@ export function generateDeviceConfig(device: SimDevice): string {
   const config: Record<string, unknown> = {
     device_name: device.name,
     protocol: device.protocol,
-    update_interval_seconds: 5,
+    update_interval_seconds: 10,
     points,
   };
 
