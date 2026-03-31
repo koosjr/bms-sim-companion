@@ -70,7 +70,10 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
   // Load an assembly's points into an existing device
   function loadFromAssembly(device: SimDevice, assembly: DeviceAssembly) {
     if (!window.confirm(`Load "${assembly.name}" into "${device.name}"? This replaces all current points.`)) return;
-    patchDevice(device.id, { points: assembly.points.map(p => ({ ...p })) });
+    patchDevice(device.id, {
+      points: assembly.points.map(p => ({ ...p })),
+      addressBase: assembly.addressBase ?? 0,
+    });
     setShowLibrary(false);
   }
 

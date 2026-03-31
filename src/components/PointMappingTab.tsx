@@ -81,6 +81,10 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
+  function patchDevice(id: string, patch: Partial<SimDevice>) {
+    onUpdate({ devices: devices.map(d => d.id === id ? { ...d, ...patch } : d) });
+  }
+
   function addPointManually() {
     if (!device || !newPoint.tag.trim()) return;
     const pt: SimPoint = {
@@ -138,6 +142,35 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
             {d.name}
           </button>
         ))}
+      </div>
+
+      {/* Device header: address base toggle */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs font-medium" style={{ color: '#888780' }}>Address base:</span>
+        <div className="flex border rounded overflow-hidden text-xs" style={{ borderColor: '#D3D1C7' }}>
+          <button
+            className="px-3 py-1 font-bold"
+            style={(device.addressBase ?? 0) === 0
+              ? { background: '#1D9E75', color: '#fff' }
+              : { background: '#fff', color: '#888780' }}
+            onClick={() => patchDevice(device.id, { addressBase: 0 })}>
+            0
+          </button>
+          <button
+            className="px-3 py-1 font-bold border-l"
+            style={{
+              ...((device.addressBase ?? 0) === 1
+                ? { background: '#D4871A', color: '#fff' }
+                : { background: '#fff', color: '#888780' }),
+              borderColor: '#D3D1C7',
+            }}
+            onClick={() => patchDevice(device.id, { addressBase: 1 })}>
+            1
+          </button>
+        </div>
+        <span className="text-xs" style={{ color: '#888780' }}>
+          {(device.addressBase ?? 0) === 0 ? 'exported as-is' : 'exported −1'}
+        </span>
       </div>
 
       {/* IO groups */}
