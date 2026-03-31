@@ -272,3 +272,38 @@ export function buildSimPoints(
 
   return { points, skippedCount, invalidIndices };
 }
+
+// ── File parsing (SheetJS) ────────────────────────────────────────────────────
+
+export interface ParsedFile {
+  sheetNames: string[];
+  activeSheet: string;
+  rows: RawRow[];
+  columns: string[];
+}
+
+/**
+ * Parse a CSV or XLSX File object.
+ * If sheetName is provided, use that sheet; otherwise use the first sheet.
+ * Returns structured rows with column headers as keys.
+ */
+export async function parseFile(file: File, sheetName?: string): Promise<ParsedFile> {
+  const XLSX = await import('xlsx');
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: 'array' });
+
+  const sheetNames = workbook.SheetNames;
+  const activeSheet = sheetName && sheetNames.includes(sheetName)
+    ? sheetName
+    : sheetNames[0];
+
+  const worksheet = workbook.Sheets[activeSheet];
+  const rawRows = XLSX.utils.sheet_to_json<RawRow>(worksheet, {
+    defval: null,
+    raw: false,   // keep values as strings so we preserve "1032/33" notation
+  });
+
+  const columns = rawRows.length > 0 ? Object.keys(rawRows[0]) : [];
+
+  return { sheetNames, activeSheet, rows: rawRows, columns };
+}
