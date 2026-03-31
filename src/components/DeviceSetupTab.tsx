@@ -78,6 +78,68 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
     setShowLibrary(false);
   }
 
+  function addBlankDevice() {
+    const lastOctet = devices.length > 0
+      ? (parseInt(devices[devices.length - 1].ip_address.split('.').pop() ?? '100', 10) + 1)
+      : 101;
+    const newDevice: SimDevice = {
+      id: uuidv4(),
+      source_id: '',
+      name: `Device ${devices.length + 1}`,
+      description: '',
+      protocol: 'modbus',
+      ip_address: `${state.network.ip_prefix}.${lastOctet}`,
+      modbus_port: 502,
+      unit_id: 1,
+      byte_order: 'big',
+      word_order: 'big',
+      bacnet_port: 47808,
+      device_instance: devices.length + 1,
+      device_name: `Device ${devices.length + 1}`,
+      vendor_id: 0,
+      points: [],
+    };
+    onUpdate({ devices: [...devices, newDevice] });
+    setOpenId(newDevice.id);
+  }
+
+  function addDeviceFromAssembly(assembly: DeviceAssembly) {
+    const lastOctet = devices.length > 0
+      ? (parseInt(devices[devices.length - 1].ip_address.split('.').pop() ?? '100', 10) + 1)
+      : 101;
+    const newDevice: SimDevice = {
+      id: uuidv4(),
+      source_id: '',
+      name: assembly.name,
+      description: assembly.description ?? '',
+      protocol: assembly.protocol,
+      ip_address: `${state.network.ip_prefix}.${lastOctet}`,
+      modbus_port: 502,
+      unit_id: 1,
+      byte_order: 'big',
+      word_order: 'big',
+      bacnet_port: 47808,
+      device_instance: devices.length + 1,
+      device_name: assembly.name,
+      vendor_id: 0,
+      points: assembly.points.map(p => ({ ...p })),
+      addressBase: assembly.addressBase ?? 0,
+    };
+    onUpdate({ devices: [...devices, newDevice] });
+    setOpenId(newDevice.id);
+    setShowLibrary(false);
+  }
+
+  function renameAssembly(assembly: DeviceAssembly) {
+    const newName = window.prompt('Rename assembly:', assembly.name);
+    if (!newName?.trim() || newName.trim() === assembly.name) return;
+    const updated = assemblies.map(a =>
+      a.id === assembly.id ? { ...a, name: newName.trim() } : a
+    );
+    saveAssemblies(updated);
+    setAssemblies(updated);
+  }
+
   function removeAssembly(id: string) {
     if (!window.confirm('Delete this assembly?')) return;
     deleteAssembly(id);
@@ -119,6 +181,18 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
       <p className="text-sm mb-4" style={{ color: '#888780' }}>
         Configure protocol, IP address, and connection parameters for each device.
       </p>
+
+      {/* Devices header + Add button */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold" style={{ color: '#2C2C2A' }}>
+          Devices ({devices.length})
+        </span>
+        <button onClick={addBlankDevice}
+          className="text-xs px-3 py-1.5 rounded border font-medium"
+          style={{ borderColor: '#1D9E75', color: '#085041', background: '#E1F5EE' }}>
+          + Add Device
+        </button>
+      </div>
 
       {/* Devices */}
       <div className="space-y-3 mb-6">
@@ -298,7 +372,7 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
                     <th className="text-left py-1 font-medium" style={{ color: '#888780' }}>Protocol</th>
                     <th className="text-left py-1 font-medium" style={{ color: '#888780' }}>Points</th>
                     <th className="text-left py-1 font-medium" style={{ color: '#888780' }}>Saved</th>
-                    <th />
+                    <th className="text-right py-1 font-medium" style={{ color: '#888780' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -318,10 +392,25 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
                         {new Date(a.savedAt).toLocaleDateString()}
                       </td>
                       <td className="py-1.5 text-right">
-                        <button onClick={() => removeAssembly(a.id)}
-                          className="text-xs px-2 py-0.5 rounded border" style={{ borderColor: '#E24B4A', color: '#E24B4A' }}>
-                          Delete
-                        </button>
+                        <div className="flex gap-1 justify-end">
+                          <button onClick={() => addDeviceFromAssembly(a)}
+                            className="text-xs px-2 py-0.5 rounded border font-medium"
+                            style={{ borderColor: '#1D9E75', color: '#085041', background: '#E1F5EE' }}
+                            title="Create a new device from this assembly">
+                            + Add
+                          </button>
+                          <button onClick={() => renameAssembly(a)}
+                            className="text-xs px-2 py-0.5 rounded border"
+                            style={{ borderColor: '#D3D1C7', color: '#2C2C2A' }}
+                            title="Rename this assembly">
+                            Edit
+                          </button>
+                          <button onClick={() => removeAssembly(a.id)}
+                            className="text-xs px-2 py-0.5 rounded border"
+                            style={{ borderColor: '#E24B4A', color: '#E24B4A' }}>
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
