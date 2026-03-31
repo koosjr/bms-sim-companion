@@ -7,7 +7,7 @@ export type TargetField =
   | 'scaleFactor' | 'units' | 'objectType' | 'access';
 
 // Patterns that indicate each protocol (checked against column names, case-insensitive)
-const MODBUS_HINTS = ['register', 'function_code', 'function code', 'modbus', 'fc'];
+const MODBUS_HINTS = ['register', 'function_code', 'function code', 'modbus'];
 const BACNET_HINTS = ['object', 'instance', 'bacnet'];
 
 // Field patterns: [targetField, patterns[], modbusOnly?, bacnetOnly?]
@@ -36,6 +36,14 @@ export function detectProtocol(columns: string[]): DetectedProtocol {
   return 'unknown';
 }
 
+/**
+ * Map column names to target fields for the given protocol.
+ * Precondition: protocol must be 'modbus' or 'bacnet' (not 'unknown').
+ * Callers should narrow the result of detectProtocol() before passing it here:
+ *   const proto = detectProtocol(cols);
+ *   if (proto === 'unknown') { request user input }
+ *   else { detectColumnMapping(cols, proto); }
+ */
 export function detectColumnMapping(
   columns: string[],
   protocol: 'modbus' | 'bacnet',

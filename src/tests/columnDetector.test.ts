@@ -57,6 +57,6 @@ describe('detectColumnMapping', () => {
   });
   it('picks best match when multiple columns match same field', () => {
     const result = detectColumnMapping(['Register_Number_1based', 'Address_0based', 'Name'], 'modbus');
-    expect(['Register_Number_1based', 'Address_0based']).toContain(result.address);
+    expect(result.address).toBe('Register_Number_1based');
   });
 });
