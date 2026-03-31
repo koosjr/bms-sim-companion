@@ -1,6 +1,6 @@
 // src/components/PointMappingTab.tsx
 import { useState } from 'react';
-import type { AppState, SimDevice, SimPoint, ModbusFunctionCode, ModbusDataType, BACnetObjectType, BACnetUnits } from '../types';
+import type { AppState, SimDevice, SimPoint, ModbusFunctionCode, ModbusDataType, BACnetObjectType, BACnetUnits, IOType } from '../types';
 
 interface Props {
   state: AppState;
@@ -40,6 +40,8 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
   const [activeDeviceId, setActiveDeviceId] = useState<string>(state.devices[0]?.id ?? '');
   // Auto-fill start register per IO group: { 'AI': '8001', 'DI': '8100', ... }
   const [fillStart, setFillStart] = useState<Record<string, string>>({});
+  const [showAddPoint, setShowAddPoint] = useState(false);
+  const [newPoint, setNewPoint] = useState({ tag: '', description: '', io_type: 'AI' as IOType });
 
   const { devices } = state;
   const device = devices.find(d => d.id === activeDeviceId) ?? devices[0];
@@ -77,6 +79,22 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     // Verify we consumed the right points
     const _ = groupPoints; void _;
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
+  }
+
+  function addPointManually() {
+    if (!device || !newPoint.tag.trim()) return;
+    const pt: SimPoint = {
+      tag: newPoint.tag.trim().toUpperCase(),
+      description: newPoint.description.trim(),
+      io_type: newPoint.io_type,
+      function_code: 3, register: 0, data_type: '16uint', scale: 1, object_count: 1,
+      object_type: 'analogInput', object_instance: 0, units: 'noUnits', cov_increment: 0.1,
+      base_value: 0, noise_pct: 0,
+    };
+    const updated = { ...device, points: [...device.points, pt] };
+    onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
+    setNewPoint({ tag: '', description: '', io_type: 'AI' });
+    setShowAddPoint(false);
   }
 
   if (!device) return (
@@ -275,7 +293,57 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
         })}
       </div>
 
-      <button onClick={onNext} className="mt-6 px-5 py-2 rounded text-sm font-medium text-white"
+      {/* Add point manually — discouraged, for third-party device integration only */}
+      <div className="mt-6 pt-4 border-t" style={{ borderColor: '#F1EFE8' }}>
+        {!showAddPoint ? (
+          <button onClick={() => setShowAddPoint(true)}
+            className="text-xs px-3 py-1.5 rounded border"
+            style={{ borderColor: '#D3D1C7', color: '#aaa' }}>
+            + Add point manually
+          </button>
+        ) : (
+          <div className="bg-white rounded-xl border p-4" style={{ borderColor: '#EF9F27' }}>
+            <p className="text-xs mb-3 font-medium" style={{ color: '#854F0B' }}>
+              ⚠ Manual points are for third-party device integration only.
+              For your own controllers, generate point names in BMSHub and import them — this keeps naming consistent.
+            </p>
+            <div className="flex gap-3 items-end flex-wrap">
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: '#888780' }}>Tag</label>
+                <input className={inputCls} style={{ ...inputStyle, width: '140px' }}
+                  placeholder="e.g. METER1KWHTOT"
+                  value={newPoint.tag}
+                  onChange={e => setNewPoint(p => ({ ...p, tag: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: '#888780' }}>Description</label>
+                <input className={inputCls} style={{ ...inputStyle, width: '200px' }}
+                  placeholder="Total kWh"
+                  value={newPoint.description}
+                  onChange={e => setNewPoint(p => ({ ...p, description: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: '#888780' }}>I/O Type</label>
+                <select className={inputCls} style={{ ...inputStyle, width: '80px' }}
+                  value={newPoint.io_type}
+                  onChange={e => setNewPoint(p => ({ ...p, io_type: e.target.value as IOType }))}>
+                  {(['AI','AO','DI','DO','AV','BV'] as IOType[]).map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <button onClick={addPointManually}
+                className="px-3 py-1.5 rounded text-sm font-medium text-white"
+                style={{ background: '#1D9E75' }}>Add</button>
+              <button onClick={() => setShowAddPoint(false)}
+                className="px-3 py-1.5 rounded text-sm"
+                style={{ background: '#F1EFE8', color: '#888780' }}>Cancel</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button onClick={onNext} className="mt-4 px-5 py-2 rounded text-sm font-medium text-white"
         style={{ background: '#1D9E75' }}>
         Next: Simulation Values →
       </button>

@@ -96,6 +96,17 @@ export interface NetworkConfig {
   parent_interface: string; // e.g. "eth0"
 }
 
+// ── Device Assembly (saved device template) ──────────────────────────────────
+
+export interface DeviceAssembly {
+  id: string;
+  name: string;          // user-given assembly name e.g. "ABB PM5 Power Meter"
+  description: string;
+  protocol: Protocol;
+  savedAt: string;
+  points: SimPoint[];    // full point config including addresses
+}
+
 // ── App state ─────────────────────────────────────────────────────────────────
 
 export interface AppState {

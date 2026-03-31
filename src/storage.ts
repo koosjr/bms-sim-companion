@@ -1,6 +1,8 @@
 // src/storage.ts
 import { v4 as uuidv4 } from 'uuid';
-import type { AppState, NetworkConfig } from './types';
+import type { AppState, NetworkConfig, DeviceAssembly } from './types';
+
+const ASSEMBLIES_KEY = 'bms_sim_device_assemblies';
 
 const KEY = 'bms_sim_state';
 const PROJECTS_KEY = 'bms_sim_projects';
@@ -150,6 +152,29 @@ function emptyState(name = 'Project 1'): AppState {
     devices: [],
     network: { ...DEFAULT_NETWORK },
   };
+}
+
+// ── Device Assembly Library ───────────────────────────────────────────────────
+
+export function loadAssemblies(): DeviceAssembly[] {
+  try {
+    const raw = localStorage.getItem(ASSEMBLIES_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as DeviceAssembly[];
+  } catch { return []; }
+}
+
+export function saveAssemblies(assemblies: DeviceAssembly[]): void {
+  localStorage.setItem(ASSEMBLIES_KEY, JSON.stringify(assemblies));
+}
+
+export function addAssembly(assembly: DeviceAssembly): void {
+  const existing = loadAssemblies();
+  saveAssemblies([...existing, assembly]);
+}
+
+export function deleteAssembly(id: string): void {
+  saveAssemblies(loadAssemblies().filter(a => a.id !== id));
 }
 
 export function createEmptyState(name: string): AppState {
