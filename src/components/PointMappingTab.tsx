@@ -52,6 +52,12 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
+  function deletePoint(tag: string) {
+    if (!device) return;
+    const updated = { ...device, points: device.points.filter(p => p.tag !== tag) };
+    onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
+  }
+
   function patchAllInGroup(ioType: string, patch: Partial<SimPoint>) {
     if (!device) return;
     const updated = {
@@ -241,6 +247,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                         <th className="text-left px-4 py-2 font-medium" style={{ color: '#888780' }}>COV Inc.</th>
                       </>
                     )}
+                    <th />
                   </tr>
                 </thead>
                 <tbody className="divide-y" style={{ borderColor: '#F1EFE8' }}>
@@ -314,6 +321,14 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                           </td>
                         </>
                       )}
+                      <td className="px-2 py-2">
+                        <button onClick={() => deletePoint(point.tag)}
+                          className="text-xs px-2 py-0.5 rounded border opacity-40 hover:opacity-100 transition-opacity"
+                          style={{ borderColor: '#E24B4A', color: '#E24B4A' }}
+                          title="Delete point">
+                          ✕
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
