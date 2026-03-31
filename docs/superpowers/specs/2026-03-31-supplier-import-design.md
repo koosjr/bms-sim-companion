@@ -103,31 +103,36 @@ A table of **target fields** (left) with clickable **source column pills** (righ
 
 ### Modbus
 
-| Supplier value | Stored `data_type` |
-|---|---|
-| `Float32`, `FLOAT`, `float` | `32float` |
-| `UInt16`, `UINT16`, `uint16` | `16uint` |
-| `Int16`, `INT16`, `int16` | `16int` |
-| `UInt32`, `UINT32` | `32uint` |
-| `Int32`, `INT32` | `32int` |
-| `BOOL`, `bool`, `Bit`, `bit` | `bool` |
-| anything else | `16uint` (flagged as unrecognised) |
+The two things the importer needs to determine from the data type column are:
+1. **Width** — 16-bit (1 register) or 32-bit (2 registers)
+2. **Type** — signed int, unsigned int, float, or bool
 
-**32-bit register pairs — two supplier conventions to handle:**
+Word order and byte order are **device-level settings** in Device Setup and apply uniformly to all points on that device. The importer never touches them.
 
-**Convention 1 — split rows with `_HI` / `_LW` suffix in data type column**
-Some suppliers write one row per word (e.g. `UINT32_HI` at address 1032, `UINT32_LW` at address 1033).
-- Strip the suffix before type lookup → stored `data_type` is `32uint` or `32int`
-- Any row whose data type (after stripping prefix/suffix) ends in `_LW`, `_LOW`, `_LO` → **skip row entirely**
-- The `_HI` / `_HIGH` row becomes one SimPoint with `object_count: 2`
+| Supplier value | Width | Stored `data_type` |
+|---|---|---|
+| `Float32`, `FLOAT`, `float` | 32-bit | `32float` |
+| `UInt16`, `UINT16`, `uint16` | 16-bit | `16uint` |
+| `Int16`, `INT16`, `int16` | 16-bit | `16int` |
+| `UInt32`, `UINT32` | 32-bit | `32uint` |
+| `Int32`, `INT32` | 32-bit | `32int` |
+| `BOOL`, `bool`, `Bit`, `bit` | 16-bit | `bool` |
+| anything else | 16-bit | `16uint` (flagged as unrecognised) |
 
-**Convention 2 — combined address notation in a single row**
-Some suppliers write both register addresses in one cell, e.g. `1032/33` or `1032-1033`, meaning "this 32-bit value occupies registers 1032 and 1033".
-- Parse the address cell: if it contains `/` or `-` between two numbers, extract the **first number only** as the register address
-- `object_count` is set to `2` automatically for any 32-bit data type
-- The second address is implied (first + 1) and does not need to be stored separately
+**Width determines `object_count`:** 16-bit → `object_count: 1`, 32-bit → `object_count: 2`. That is all the simulator needs alongside the word order device setting.
 
-**In both cases**, word order and byte order are **not** determined from the data type column — they are device-level settings configured in Device Setup and apply uniformly to all 32-bit points on that device.
+**32-bit register pairs — two supplier conventions:**
+
+**Convention 1 — split rows** (`_HI` / `_LW` suffix in data type column)
+Suppliers write one row per word (e.g. `UINT32_HI` at address 1032, `UINT32_LW` at address 1033).
+- Strip `_HI`/`_HIGH`/`_LW`/`_LOW`/`_LO` suffix before type lookup
+- Any row whose suffix is `_LW`, `_LOW`, or `_LO` → **skip row entirely**
+- The `_HI` row becomes one SimPoint with `object_count: 2`
+
+**Convention 2 — combined address cell** (e.g. `1032/33` or `1032-1033`)
+- Extract the first number as the register address
+- `object_count: 2` set automatically because data type is 32-bit
+- Second address is implied (first + 1), not stored
 
 ### BACnet object types
 
