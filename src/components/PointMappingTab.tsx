@@ -65,7 +65,6 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     if (!device) return;
     const start = parseInt(fillStart[ioType] ?? '');
     if (isNaN(start)) return;
-    const groupPoints = device.points.filter(p => p.io_type === ioType);
     let reg = start;
     const updated = {
       ...device,
@@ -76,8 +75,6 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
         return { ...p, register: r };
       }),
     };
-    // Verify we consumed the right points
-    const _ = groupPoints; void _;
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 

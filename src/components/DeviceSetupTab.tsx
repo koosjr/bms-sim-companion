@@ -61,6 +61,7 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
       protocol: device.protocol,
       savedAt: new Date().toISOString(),
       points: device.points.map(p => ({ ...p })),
+      addressBase: device.addressBase,
     };
     addAssembly(assembly);
     setAssemblies(loadAssemblies());
