@@ -280,6 +280,7 @@ export interface ParsedFile {
   activeSheet: string;
   rows: RawRow[];
   columns: string[];
+  _file?: File;  // stored for sheet re-parsing
 }
 
 /**
@@ -305,5 +306,5 @@ export async function parseFile(file: File, sheetName?: string): Promise<ParsedF
 
   const columns = rawRows.length > 0 ? Object.keys(rawRows[0]) : [];
 
-  return { sheetNames, activeSheet, rows: rawRows, columns };
+  return { sheetNames, activeSheet, rows: rawRows, columns, _file: file };
 }
