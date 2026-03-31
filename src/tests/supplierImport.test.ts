@@ -238,4 +238,19 @@ describe('buildSimPoints', () => {
     const result = buildSimPoints(rows, mapping, 'modbus');
     expect(result.points[0].scale).toBe(1);
   });
+
+  it('invalidIndices uses points-array index not source-row index', () => {
+    // rows[0] = low-word pair (skipped), rows[1] = valid, rows[2] = invalid (no address)
+    const rows = [
+      { Name: 'A_low', Register: '101', Data_Type: 'UINT32_LW' },   // skipped
+      { Name: 'Valid', Register: '5', Data_Type: 'UInt16' },         // points[0]
+      { Name: 'NoAddr', Register: null, Data_Type: 'UInt16' },       // points[1] — invalid
+    ];
+    const mapping = { pointName: 'Name', address: 'Register', dataType: 'Data_Type' };
+    const result = buildSimPoints(rows, mapping, 'modbus');
+    expect(result.points).toHaveLength(2);
+    expect(result.skippedCount).toBe(1);
+    // points[1] is the invalid row — index in output array is 1, not 2 (source row index)
+    expect(result.invalidIndices).toEqual([1]);
+  });
 });

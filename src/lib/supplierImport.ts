@@ -184,6 +184,7 @@ export function buildSimPoints(
   const points: SimPoint[] = [];
   let skippedCount = 0;
   const invalidIndices: number[] = [];
+  let pointIndex = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -204,7 +205,7 @@ export function buildSimPoints(
 
     // Flag rows with missing required fields
     const isInvalid = !rawName || addr === null;
-    if (isInvalid) invalidIndices.push(i);
+    if (isInvalid) invalidIndices.push(pointIndex);
 
     const tag = sanitizeTag(rawName || `POINT_${i}`);
     const description = rawName;
@@ -268,6 +269,7 @@ export function buildSimPoints(
     }
 
     points.push(point);
+    pointIndex++;
   }
 
   return { points, skippedCount, invalidIndices };
