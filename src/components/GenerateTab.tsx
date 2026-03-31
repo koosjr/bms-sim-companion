@@ -1,8 +1,9 @@
 // src/components/GenerateTab.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { AppState, NetworkConfig } from '../types';
 import { buildProjectZip } from '../generators/zipBuilder';
-import { generateThingsBoardJson } from '../generators/thingsBoardExporter';
+import { generateTBModbusSlaves, generateTBBacnetDevices } from '../generators/thingsBoardExporter';
+import { validateAllDevices, hasCriticalIssues } from '../lib/validation';
 
 interface Props {
   state: AppState;
@@ -24,6 +25,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export default function GenerateTab({ state, onUpdate }: Props) {
   const [downloading, setDownloading] = useState(false);
   const { network, devices, project_name } = state;
+
+  const validationResults = useMemo(() => validateAllDevices(devices), [devices]);
+  const blocked = validationResults.some(r => hasCriticalIssues(r.issues));
 
   function patchNetwork(patch: Partial<NetworkConfig>) {
     onUpdate({ network: { ...network, ...patch } });
@@ -67,13 +71,16 @@ export default function GenerateTab({ state, onUpdate }: Props) {
     }
   }
 
-  function downloadThingsBoard() {
-    const json = generateThingsBoardJson(devices);
+  function downloadTBConnector(type: 'modbus' | 'bacnet') {
+    const slug = project_name.toLowerCase().replace(/\s+/g, '-');
+    const json = type === 'modbus'
+      ? generateTBModbusSlaves(devices)
+      : generateTBBacnetDevices(devices);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${project_name.toLowerCase().replace(/\s+/g, '-')}-thingsboard.json`;
+    a.download = `${slug}-tb-${type}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -136,23 +143,60 @@ export default function GenerateTab({ state, onUpdate }: Props) {
         )}
       </div>
 
+      {/* Validation results */}
+      {validationResults.length > 0 && (
+        <div className="rounded-lg border p-4 mb-5 text-xs"
+          style={{ borderColor: blocked ? '#E24B4A' : '#EF9F27', background: blocked ? '#FCEBEB' : '#FAEEDA' }}>
+          <div className="font-semibold mb-2" style={{ color: blocked ? '#A32D2D' : '#854F0B' }}>
+            {blocked ? '⛔ Cannot generate — fix duplicate issues first' : '⚠ Duplicate register addresses (warnings only)'}
+          </div>
+          {validationResults.map(r => (
+            <div key={r.deviceId} className="mb-2">
+              <div className="font-medium mb-1" style={{ color: blocked ? '#A32D2D' : '#854F0B' }}>{r.deviceName}</div>
+              <ul className="list-disc list-inside space-y-0.5" style={{ color: blocked ? '#A32D2D' : '#854F0B' }}>
+                {r.issues.map((issue, i) => (
+                  <li key={i}>
+                    {issue.type === 'duplicate_tag' && <>Duplicate tag: <code>{issue.key}</code></>}
+                    {issue.type === 'duplicate_bacnet_instance' && <>Duplicate BACnet instance <code>{issue.key}</code> → {issue.tags.join(', ')}</>}
+                    {issue.type === 'duplicate_modbus_register' && <>Duplicate register <code>{issue.key}</code> → {issue.tags.join(', ')}</>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          {blocked && (
+            <p className="mt-2" style={{ color: '#A32D2D' }}>
+              Go to <strong>Point Mapping</strong> and fix the highlighted duplicates before generating.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Download buttons */}
       <div className="flex gap-3 flex-wrap mb-6">
         <button
           onClick={downloadZip}
-          disabled={downloading || devices.length === 0}
+          disabled={downloading || devices.length === 0 || blocked}
           className="px-5 py-2.5 rounded text-sm font-medium text-white transition-opacity"
-          style={{ background: '#1D9E75', opacity: downloading || devices.length === 0 ? 0.5 : 1 }}
+          style={{ background: '#1D9E75', opacity: downloading || devices.length === 0 || blocked ? 0.5 : 1 }}
         >
           {downloading ? 'Building ZIP\u2026' : '\u2b07 Download Simulator ZIP'}
         </button>
         <button
-          onClick={downloadThingsBoard}
+          onClick={() => downloadTBConnector('modbus')}
           disabled={devices.length === 0}
           className="px-5 py-2.5 rounded text-sm font-medium text-white transition-opacity"
           style={{ background: '#2C6BAD', opacity: devices.length === 0 ? 0.5 : 1 }}
         >
-          \u2b07 Download ThingsBoard JSON
+          ↓ TB Modbus Connector
+        </button>
+        <button
+          onClick={() => downloadTBConnector('bacnet')}
+          disabled={devices.length === 0}
+          className="px-5 py-2.5 rounded text-sm font-medium text-white transition-opacity"
+          style={{ background: '#6B4EAD', opacity: devices.length === 0 ? 0.5 : 1 }}
+        >
+          ↓ TB BACnet Connector
         </button>
       </div>
 

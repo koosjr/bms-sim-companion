@@ -1,6 +1,7 @@
 // src/components/PointMappingTab.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { AppState, SimDevice, SimPoint, ModbusFunctionCode, ModbusDataType, BACnetObjectType, BACnetUnits, IOType } from '../types';
+import { validateDevice, affectedTags, duplicateInstanceKeys, duplicateRegisterKeys, hasCriticalIssues } from '../lib/validation';
 
 interface Props {
   state: AppState;
@@ -104,6 +105,13 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     setShowAddPoint(false);
   }
 
+  // ── Validation ──────────────────────────────────────────────────────────────
+  const validationIssues = useMemo(() => device ? validateDevice(device) : [], [device]);
+  const badTags      = useMemo(() => affectedTags(validationIssues), [validationIssues]);
+  const badInstances = useMemo(() => duplicateInstanceKeys(validationIssues), [validationIssues]);
+  const badRegisters = useMemo(() => duplicateRegisterKeys(validationIssues), [validationIssues]);
+  const critical     = useMemo(() => hasCriticalIssues(validationIssues), [validationIssues]);
+
   if (!device) return (
     <div className="text-sm" style={{ color: '#888780' }}>No devices configured. Go back to Device Setup.</div>
   );
@@ -146,6 +154,25 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
           </button>
         ))}
       </div>
+
+      {/* Validation banner */}
+      {validationIssues.length > 0 && (
+        <div className="rounded-lg border p-3 mb-4 text-xs"
+          style={{ borderColor: critical ? '#E24B4A' : '#EF9F27', background: critical ? '#FCEBEB' : '#FAEEDA', color: critical ? '#A32D2D' : '#854F0B' }}>
+          <div className="font-semibold mb-1">
+            {critical ? '⛔ Duplicate issues — simulator will crash on export' : '⚠ Duplicate register addresses detected'}
+          </div>
+          <ul className="space-y-0.5 list-disc list-inside">
+            {validationIssues.map((issue, i) => (
+              <li key={i}>
+                {issue.type === 'duplicate_tag' && <>Duplicate tag name: <code>{issue.key}</code></>}
+                {issue.type === 'duplicate_bacnet_instance' && <>Duplicate BACnet instance <code>{issue.key}</code> — affects: {issue.tags.join(', ')}</>}
+                {issue.type === 'duplicate_modbus_register' && <>Duplicate register <code>{issue.key}</code> — affects: {issue.tags.join(', ')}</>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Device header: address base toggle */}
       <div className="flex items-center gap-2 mb-4">
@@ -251,10 +278,23 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                   </tr>
                 </thead>
                 <tbody className="divide-y" style={{ borderColor: '#F1EFE8' }}>
-                  {pts.map(point => (
-                    <tr key={point.tag} className="hover:bg-gray-50">
+                  {pts.map(point => {
+                    const tagDupe = badTags.has(point.tag);
+                    const instanceKey = `${point.object_type}:${point.object_instance}`;
+                    const instanceDupe = device.protocol === 'bacnet' && badInstances.has(instanceKey);
+                    const registerKey = `FC${point.function_code}:${point.register}`;
+                    const registerDupe = device.protocol === 'modbus' && badRegisters.has(registerKey);
+                    const rowError = tagDupe || instanceDupe;
+                    const rowWarn  = !rowError && registerDupe;
+                    return (
+                    <tr key={point.tag}
+                      style={rowError ? { background: '#FDF0F0' } : rowWarn ? { background: '#FFFBF0' } : undefined}
+                      className={rowError || rowWarn ? '' : 'hover:bg-gray-50'}>
                       <td className="px-4 py-2">
-                        <div className="font-mono text-xs font-bold" style={{ color: '#2C2C2A' }}>{point.tag}</div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono text-xs font-bold" style={{ color: rowError ? '#A32D2D' : '#2C2C2A' }}>{point.tag}</span>
+                          {tagDupe && <span className="text-xs px-1 rounded font-bold" style={{ background: '#E24B4A', color: '#fff' }}>DUP TAG</span>}
+                        </div>
                         <div className="text-xs" style={{ color: '#888780' }}>{point.description}</div>
                       </td>
                       {device.protocol === 'modbus' ? (
@@ -270,9 +310,11 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                             </select>
                           </td>
                           <td className="px-4 py-2">
-                            <input type="number" className={inputCls} style={{ ...inputStyle, width: '90px' }}
+                            <input type="number" className={inputCls}
+                              style={{ ...inputStyle, width: '90px', ...(registerDupe ? { borderColor: '#EF9F27', background: '#FFFBF0' } : {}) }}
                               value={point.register}
                               onChange={e => patchPoint(point.tag, { register: Number(e.target.value) })} />
+                            {registerDupe && <div className="text-xs mt-0.5 font-bold" style={{ color: '#EF9F27' }}>DUP</div>}
                           </td>
                           <td className="px-4 py-2">
                             <select className={inputCls} style={{ ...inputStyle, width: '100px' }}
@@ -301,9 +343,11 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                             </select>
                           </td>
                           <td className="px-4 py-2">
-                            <input type="number" className={inputCls} style={{ ...inputStyle, width: '80px' }}
+                            <input type="number" className={inputCls}
+                              style={{ ...inputStyle, width: '80px', ...(instanceDupe ? { borderColor: '#E24B4A', background: '#FFF0F0' } : {}) }}
                               value={point.object_instance}
                               onChange={e => patchPoint(point.tag, { object_instance: Number(e.target.value) })} />
+                            {instanceDupe && <div className="text-xs mt-0.5 font-bold" style={{ color: '#E24B4A' }}>DUP</div>}
                           </td>
                           <td className="px-4 py-2">
                             <select className={inputCls} style={{ ...inputStyle, width: '140px' }}
@@ -315,7 +359,8 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                             </select>
                           </td>
                           <td className="px-4 py-2">
-                            <input type="number" step="0.1" className={inputCls} style={{ ...inputStyle, width: '70px' }}
+                            <input type="number" step="0.1" className={inputCls}
+                              style={{ ...inputStyle, width: '70px', ...(instanceDupe ? { borderColor: '#E24B4A', background: '#FFF0F0' } : {}) }}
                               value={point.cov_increment}
                               onChange={e => patchPoint(point.tag, { cov_increment: Number(e.target.value) })} />
                           </td>
@@ -330,7 +375,8 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
