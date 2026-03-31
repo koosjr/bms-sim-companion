@@ -21,8 +21,9 @@ import PointMappingTab from './components/PointMappingTab';
 import SimValuesTab from './components/SimValuesTab';
 import GenerateTab from './components/GenerateTab';
 import ProjectBar from './components/ProjectBar';
+import SupplierImportTab from './components/SupplierImportTab';
 
-type Tab = 'import' | 'devices' | 'points' | 'values' | 'generate';
+type Tab = 'import' | 'devices' | 'points' | 'values' | 'generate' | 'supplier';
 
 function initApp(): { projects: ProjectMeta[]; activeProjectId: string; state: AppState } {
   const { projects, activeId, activeState } = migrateIfNeeded();
@@ -143,6 +144,7 @@ export default function App() {
   void loadProjects;
 
   const TABS: { id: Tab; label: string }[] = [
+    { id: 'supplier', label: '⊕ Supplier Import' },
     { id: 'import',   label: '① Import' },
     { id: 'devices',  label: '② Devices' },
     { id: 'points',   label: '③ Points' },
@@ -196,6 +198,7 @@ export default function App() {
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 py-6">
+        {activeTab === 'supplier' && <SupplierImportTab onSaved={() => setActiveTab('devices')} />}
         {activeTab === 'import'   && <ImportTab state={state} onUpdate={update} onNext={() => setActiveTab('devices')} />}
         {activeTab === 'devices'  && <DeviceSetupTab state={state} onUpdate={update} onNext={() => setActiveTab('points')} />}
         {activeTab === 'points'   && <PointMappingTab state={state} onUpdate={update} onNext={() => setActiveTab('values')} />}
