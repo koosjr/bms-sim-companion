@@ -16,20 +16,33 @@ export default function SimValuesTab({ state, onUpdate, onNext }: Props) {
   const { devices } = state;
   const device = devices.find(d => d.id === activeDeviceId) ?? devices[0];
 
-  function patchPoint(tag: string, patch: Partial<SimPoint>) {
-    if (!device) return;
-    const updated = { ...device, points: device.points.map(p => p.tag === tag ? { ...p, ...patch } : p) };
-    onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
-  }
-
-  if (!device) return <div className="text-sm" style={{ color: '#888780' }}>No devices. Go back to Device Setup.</div>;
-
   function isBinary(p: SimPoint): boolean {
     return p.data_type === 'bool'
       || p.object_type === 'binaryInput'
       || p.object_type === 'binaryOutput'
       || p.object_type === 'binaryValue';
   }
+
+  function patchPoint(tag: string, patch: Partial<SimPoint>) {
+    if (!device) return;
+    const updated = { ...device, points: device.points.map(p => p.tag === tag ? { ...p, ...patch } : p) };
+    onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
+  }
+
+  function applyDefaults(devIds: string[]) {
+    const patched = devices.map(d => {
+      if (!devIds.includes(d.id)) return d;
+      return {
+        ...d,
+        points: d.points.map(p =>
+          isBinary(p) ? p : { ...p, base_value: 50, noise_pct: 50 }
+        ),
+      };
+    });
+    onUpdate({ devices: patched });
+  }
+
+  if (!device) return <div className="text-sm" style={{ color: '#888780' }}>No devices. Go back to Device Setup.</div>;
 
   return (
     <div className="max-w-3xl">
@@ -51,6 +64,23 @@ export default function SimValuesTab({ state, onUpdate, onNext }: Props) {
             {d.name}
           </button>
         ))}
+      </div>
+
+      {/* Quick-fill toolbar */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xs" style={{ color: '#888780' }}>Set analogue defaults:</span>
+        <button
+          onClick={() => applyDefaults([device.id])}
+          className="text-xs px-3 py-1.5 rounded border font-medium"
+          style={{ borderColor: '#1D9E75', color: '#085041', background: '#E1F5EE' }}>
+          50 / 50% — this device
+        </button>
+        <button
+          onClick={() => applyDefaults(devices.map(d => d.id))}
+          className="text-xs px-3 py-1.5 rounded border font-medium"
+          style={{ borderColor: '#085041', color: '#fff', background: '#1D9E75' }}>
+          50 / 50% — all devices
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: '#D3D1C7' }}>
