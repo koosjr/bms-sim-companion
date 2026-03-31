@@ -108,12 +108,14 @@ A table of **target fields** (left) with clickable **source column pills** (righ
 | `Float32`, `FLOAT`, `float` | `32float` |
 | `UInt16`, `UINT16`, `uint16` | `16uint` |
 | `Int16`, `INT16`, `int16` | `16int` |
-| `UInt32`, `UINT32`, `UINT32_HI` | `32uint` |
-| `Int32`, `INT32`, `INT32_HI` | `32int` |
+| `UInt32`, `UINT32` | `32uint` |
+| `Int32`, `INT32` | `32int` |
 | `BOOL`, `bool`, `Bit`, `bit` | `bool` |
 | anything else | `16uint` (flagged as unrecognised) |
 
-**32-bit register pairs:** rows tagged `_HI` / `_LW` (or `_HIGH` / `_LOW`) are merged into a single SimPoint. The `_LW` row is skipped; the `_HI` row becomes one point consuming 2 registers (`object_count: 2`).
+**32-bit register pairs:** Some suppliers append `_HI` / `_LW` (or `_HIGH` / `_LOW`) to the data type column to indicate the high and low word registers of a 32-bit value (e.g. `UINT32_HI`, `INT32_LW`). These suffixes are stripped before type lookup — the stored `data_type` is simply `32uint` or `32int`. The `_LW` row is skipped; the `_HI` row becomes one SimPoint consuming 2 registers (`object_count: 2`).
+
+Word order and byte order are **not** determined from the data type column — they are device-level settings configured in Device Setup and apply uniformly to all 32-bit points on that device.
 
 ### BACnet object types
 
