@@ -9,6 +9,7 @@ import {
   ioTypeFromBACnet,
   normaliseUnits,
   sanitizeTag,
+  buildSimPoints,
 } from '../lib/supplierImport';
 
 describe('normaliseDataType', () => {
@@ -140,5 +141,88 @@ describe('sanitizeTag', () => {
   });
   it('truncates to 40 characters', () => {
     expect(sanitizeTag('A'.repeat(50))).toHaveLength(40);
+  });
+});
+
+describe('buildSimPoints', () => {
+  it('builds a modbus point from a valid row', () => {
+    const rows = [{ Name: 'Humidity setpoint', Register: '1', Data_Type: 'Float32', FC: '4', Scale: '10', Units: '%' }];
+    const mapping = { pointName: 'Name', address: 'Register', dataType: 'Data_Type', functionCode: 'FC', scaleFactor: 'Scale', units: 'Units' };
+    const result = buildSimPoints(rows, mapping, 'modbus');
+    expect(result.points).toHaveLength(1);
+    expect(result.skippedCount).toBe(0);
+    expect(result.invalidIndices).toEqual([]);
+    const p = result.points[0];
+    expect(p.tag).toBe('HUMIDITY_SETPOINT');
+    expect(p.register).toBe(1);
+    expect(p.data_type).toBe('32float');
+    expect(p.object_count).toBe(2);
+    expect(p.function_code).toBe(4);
+    expect(p.scale).toBe(10);
+    expect(p.units).toBe('percent');
+  });
+
+  it('skips low-word rows and does not add to points', () => {
+    const rows = [
+      { Name: 'A', Register: '100', Data_Type: 'UINT32_HI' },
+      { Name: 'A_low', Register: '101', Data_Type: 'UINT32_LW' },
+    ];
+    const mapping = { pointName: 'Name', address: 'Register', dataType: 'Data_Type' };
+    const result = buildSimPoints(rows, mapping, 'modbus');
+    expect(result.points).toHaveLength(1);
+    expect(result.skippedCount).toBe(1);
+    expect(result.points[0].tag).toBe('A');
+  });
+
+  it('skips blank rows (no name and no address)', () => {
+    const rows = [
+      { Name: '', Register: null },
+      { Name: 'Valid', Register: '5' },
+    ];
+    const mapping = { pointName: 'Name', address: 'Register' };
+    const result = buildSimPoints(rows, mapping, 'modbus');
+    expect(result.points).toHaveLength(1);
+    expect(result.skippedCount).toBe(1);
+  });
+
+  it('flags invalid rows (missing name or address) in invalidIndices but still includes them', () => {
+    const rows = [
+      { Name: 'Valid', Register: '5' },
+      { Name: '', Register: '6' },   // missing name
+      { Name: 'NoAddr', Register: null }, // missing address
+    ];
+    const mapping = { pointName: 'Name', address: 'Register' };
+    const result = buildSimPoints(rows, mapping, 'modbus');
+    expect(result.points).toHaveLength(3);
+    expect(result.invalidIndices).toEqual([1, 2]);
+    expect(result.skippedCount).toBe(0);
+  });
+
+  it('skips DEV BACnet objects', () => {
+    const rows = [
+      { Name: 'Device', Instance: '0', Object_Type: 'DEV' },
+      { Name: 'Room Temp', Instance: '1', Object_Type: 'AI' },
+    ];
+    const mapping = { pointName: 'Name', address: 'Instance', objectType: 'Object_Type' };
+    const result = buildSimPoints(rows, mapping, 'bacnet');
+    expect(result.points).toHaveLength(1);
+    expect(result.skippedCount).toBe(1);
+    expect(result.points[0].object_type).toBe('analogInput');
+  });
+
+  it('applies scale factor for BACnet points', () => {
+    const rows = [{ Name: 'Room Temp', Instance: '1', Object_Type: 'AI', Scale: '10' }];
+    const mapping = { pointName: 'Name', address: 'Instance', objectType: 'Object_Type', scaleFactor: 'Scale' };
+    const result = buildSimPoints(rows, mapping, 'bacnet');
+    expect(result.points[0].scale).toBe(10);
+  });
+
+  it('builds a bacnet point with correct object_instance and object_type', () => {
+    const rows = [{ Name: 'Supply Temp', Instance: '131072', Object_Type: 'AV' }];
+    const mapping = { pointName: 'Name', address: 'Instance', objectType: 'Object_Type' };
+    const result = buildSimPoints(rows, mapping, 'bacnet');
+    expect(result.points).toHaveLength(1);
+    expect(result.points[0].object_instance).toBe(131072);
+    expect(result.points[0].object_type).toBe('analogValue');
   });
 });

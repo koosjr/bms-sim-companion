@@ -252,7 +252,7 @@ export function buildSimPoints(
         function_code: 3,
         register: 0,
         data_type: '16uint',
-        scale: 1,
+        scale,
         object_count: 1,
         object_type: resolvedObjectType,
         object_instance: addr ?? 0,
