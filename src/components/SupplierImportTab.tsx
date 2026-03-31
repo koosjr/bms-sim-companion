@@ -1,5 +1,5 @@
 // src/components/SupplierImportTab.tsx
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Protocol } from '../types';
 import type { ColumnMapping, ParsedFile, ImportResult } from '../lib/supplierImport';
@@ -174,7 +174,7 @@ function Step2MapColumns({
   }
 
   function goToPreview() {
-    setWizard(w => ({ ...w, step: 3, importResult: null }));
+    setWizard(w => ({ ...w, step: 3 }));
   }
 
   return (
@@ -219,9 +219,14 @@ function Step2MapColumns({
                   ? { borderColor: '#1D9E75', background: '#E1F5EE', color: '#085041' }
                   : { borderColor: '#D3D1C7', color: '#888780', background: '#fff' }}
                 onClick={async () => {
-                  const reparsed = await parseFile(parsed._file as File, name);
-                  const colMapping = detectColumnMapping(reparsed.columns, wizard.protocol) as Partial<ColumnMapping>;
-                  setWizard(w => ({ ...w, parsedFile: { ...reparsed, _file: parsed._file }, columnMapping: colMapping }));
+                  setWizard(w => ({ ...w, loading: true, error: null }));
+                  try {
+                    const reparsed = await parseFile(parsed._file as File, name);
+                    const colMapping = detectColumnMapping(reparsed.columns, wizard.protocol) as Partial<ColumnMapping>;
+                    setWizard(w => ({ ...w, loading: false, parsedFile: { ...reparsed, _file: parsed._file }, columnMapping: colMapping }));
+                  } catch (e) {
+                    setWizard(w => ({ ...w, loading: false, error: `Failed to load sheet: ${String(e)}` }));
+                  }
                 }}>
                 {name}
               </button>
@@ -313,18 +318,14 @@ function Step3Preview({
   setWizard: React.Dispatch<React.SetStateAction<WizardState>>;
   onSaved: () => void;
 }) {
-  // Build result on first render of step 3
-  const result = (() => {
-    if (wizard.importResult) return wizard.importResult;
-    const r = buildSimPoints(
-      wizard.parsedFile!.rows,
-      wizard.columnMapping as ColumnMapping,
-      wizard.protocol,
-    );
-    // Store result so we don't rebuild on re-render
-    setWizard(w => ({ ...w, importResult: r }));
-    return r;
-  })();
+  const result = useMemo(() => buildSimPoints(
+    wizard.parsedFile!.rows,
+    wizard.columnMapping as ColumnMapping,
+    wizard.protocol,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [wizard.parsedFile, wizard.columnMapping, wizard.protocol]);
+
+  const PREVIEW_LIMIT = 50;
 
   function saveAssembly() {
     const assembly: DeviceAssembly = {
@@ -342,7 +343,7 @@ function Step3Preview({
     onSaved();
   }
 
-  const visiblePoints = result.points.slice(0, 50);
+  const visiblePoints = result.points.slice(0, PREVIEW_LIMIT);
 
   return (
     <div>
@@ -446,10 +447,10 @@ function Step3Preview({
                   </tr>
                 );
               })}
-              {result.points.length > 50 && (
+              {result.points.length > PREVIEW_LIMIT && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-2 text-center text-xs" style={{ color: '#aaa' }}>
-                    … {result.points.length - 50} more points (all will be saved)
+                  <td colSpan={wizard.protocol === 'modbus' ? 7 : 5} className="px-3 py-2 text-center text-xs" style={{ color: '#aaa' }}>
+                    … {result.points.length - PREVIEW_LIMIT} more points (all will be saved)
                   </td>
                 </tr>
               )}
@@ -460,7 +461,7 @@ function Step3Preview({
 
       {/* Navigation */}
       <div className="flex items-center justify-between">
-        <button onClick={() => setWizard(w => ({ ...w, step: 2, importResult: null }))}
+        <button onClick={() => setWizard(w => ({ ...w, step: 2 }))}
           className="px-4 py-2 text-sm rounded border" style={{ borderColor: '#D3D1C7', color: '#888780' }}>
           ← Back
         </button>
@@ -506,7 +507,7 @@ export default function SupplierImportTab({ onSaved }: Props) {
               <span className="text-sm" style={{ color: active ? '#2C2C2A' : '#888780', fontWeight: active ? 600 : 400 }}>
                 {label}
               </span>
-              {i < 2 && <span style={{ color: '#D3D1C7' }}>—</span>}
+              {i < stepLabels.length - 1 && <span style={{ color: '#D3D1C7' }}>—</span>}
             </div>
           );
         })}
