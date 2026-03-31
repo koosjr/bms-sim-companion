@@ -113,9 +113,21 @@ A table of **target fields** (left) with clickable **source column pills** (righ
 | `BOOL`, `bool`, `Bit`, `bit` | `bool` |
 | anything else | `16uint` (flagged as unrecognised) |
 
-**32-bit register pairs:** Some suppliers append `_HI` / `_LW` (or `_HIGH` / `_LOW`) to the data type column to indicate the high and low word registers of a 32-bit value (e.g. `UINT32_HI`, `INT32_LW`). These suffixes are stripped before type lookup — the stored `data_type` is simply `32uint` or `32int`. The `_LW` row is skipped; the `_HI` row becomes one SimPoint consuming 2 registers (`object_count: 2`).
+**32-bit register pairs — two supplier conventions to handle:**
 
-Word order and byte order are **not** determined from the data type column — they are device-level settings configured in Device Setup and apply uniformly to all 32-bit points on that device.
+**Convention 1 — split rows with `_HI` / `_LW` suffix in data type column**
+Some suppliers write one row per word (e.g. `UINT32_HI` at address 1032, `UINT32_LW` at address 1033).
+- Strip the suffix before type lookup → stored `data_type` is `32uint` or `32int`
+- Any row whose data type (after stripping prefix/suffix) ends in `_LW`, `_LOW`, `_LO` → **skip row entirely**
+- The `_HI` / `_HIGH` row becomes one SimPoint with `object_count: 2`
+
+**Convention 2 — combined address notation in a single row**
+Some suppliers write both register addresses in one cell, e.g. `1032/33` or `1032-1033`, meaning "this 32-bit value occupies registers 1032 and 1033".
+- Parse the address cell: if it contains `/` or `-` between two numbers, extract the **first number only** as the register address
+- `object_count` is set to `2` automatically for any 32-bit data type
+- The second address is implied (first + 1) and does not need to be stored separately
+
+**In both cases**, word order and byte order are **not** determined from the data type column — they are device-level settings configured in Device Setup and apply uniformly to all 32-bit points on that device.
 
 ### BACnet object types
 
