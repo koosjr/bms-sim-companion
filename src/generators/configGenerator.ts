@@ -1,8 +1,15 @@
 import type { SimDevice } from '../types';
 
+/** Apply address base correction: if device is 1-based, subtract 1 at export */
+function resolveAddress(address: number, addressBase: 0 | 1 | undefined): number {
+  return addressBase === 1 ? address - 1 : address;
+}
+
 export function generateDeviceConfig(device: SimDevice): string {
+  const base = device.addressBase ?? 0;
+
   const points = device.points.map(p => {
-    const base: Record<string, unknown> = {
+    const pointBase: Record<string, unknown> = {
       tag: p.tag,
       description: p.description,
       io_type: p.io_type,
@@ -11,23 +18,23 @@ export function generateDeviceConfig(device: SimDevice): string {
     };
 
     if (device.protocol === 'modbus') {
-      Object.assign(base, {
+      Object.assign(pointBase, {
         function_code: p.function_code,
-        register: p.register,
+        register: resolveAddress(p.register, base),
         data_type: p.data_type,
         scale: p.scale,
         object_count: p.object_count,
       });
     } else {
-      Object.assign(base, {
+      Object.assign(pointBase, {
         object_type: p.object_type,
-        object_instance: p.object_instance,
+        object_instance: resolveAddress(p.object_instance, base),
         units: p.units,
         cov_increment: p.cov_increment,
       });
     }
 
-    return base;
+    return pointBase;
   });
 
   const config: Record<string, unknown> = {

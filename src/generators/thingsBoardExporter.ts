@@ -19,16 +19,22 @@ interface TBBACnetPoint {
   pointType: 'timeseries' | 'attributes';
 }
 
+function resolveAddress(address: number, addressBase: 0 | 1 | undefined): number {
+  return addressBase === 1 ? address - 1 : address;
+}
+
 export function generateThingsBoardJson(devices: SimDevice[]): string {
   const modbus: unknown[] = [];
   const bacnet: unknown[] = [];
 
   for (const device of devices) {
+    const base = device.addressBase ?? 0;
+
     if (device.protocol === 'modbus') {
       const timeseries: TBModbusPoint[] = device.points.map(p => ({
         tag: p.tag,
         functionCode: p.function_code,
-        address: p.register,
+        address: resolveAddress(p.register, base),
         objectsCount: p.object_count,
         type: p.data_type,
         ...(p.scale !== 1 ? { multiplier: 1 / p.scale } : {}),
@@ -47,7 +53,7 @@ export function generateThingsBoardJson(devices: SimDevice[]): string {
       const timeseries: TBBACnetPoint[] = device.points.map(p => ({
         tag: p.tag,
         objectType: p.object_type,
-        instance: p.object_instance,
+        instance: resolveAddress(p.object_instance, base),
         propertyId: 'presentValue',
         type: p.object_type.startsWith('binary') ? 'boolean' : 'float',
         pointType: 'timeseries' as const,
