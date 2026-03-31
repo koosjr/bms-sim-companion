@@ -78,6 +78,7 @@ export interface SimDevice {
   unit_id: number;
   byte_order: ByteOrder;
   word_order: ByteOrder;
+  addressBase?: 0 | 1;   // 0 = stored as-is (default), 1 = subtract 1 at export
   // BACnet
   bacnet_port: number;
   device_instance: number;
@@ -105,6 +106,8 @@ export interface DeviceAssembly {
   protocol: Protocol;
   savedAt: string;
   points: SimPoint[];    // full point config including addresses
+  addressBase?: 0 | 1;   // 0 = stored as-is (default), 1 = subtract 1 at export
+  sourceFile?: string;   // original filename for traceability
 }
 
 // ── App state ─────────────────────────────────────────────────────────────────
