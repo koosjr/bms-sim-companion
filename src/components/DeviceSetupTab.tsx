@@ -50,6 +50,13 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
     onUpdate({ devices: devices.filter(d => d.id !== id) });
   }
 
+  function sortByIp() {
+    const toNum = (ip: string) =>
+      ip.split('.').reduce((acc, oct) => acc * 256 + parseInt(oct, 10), 0);
+    const sorted = [...devices].sort((a, b) => toNum(a.ip_address) - toNum(b.ip_address));
+    onUpdate({ devices: sorted });
+  }
+
   // Save a device's full point map as a reusable assembly
   function saveAsAssembly(device: SimDevice) {
     const name = window.prompt('Assembly name (e.g. "ABB PM5 Power Meter"):', device.name);
@@ -189,11 +196,19 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
         <span className="text-sm font-semibold" style={{ color: '#2C2C2A' }}>
           Devices ({devices.length})
         </span>
-        <button onClick={addBlankDevice}
-          className="text-xs px-3 py-1.5 rounded border font-medium"
-          style={{ borderColor: '#1D9E75', color: '#085041', background: '#E1F5EE' }}>
-          + Add Device
-        </button>
+        <div className="flex gap-2">
+          <button onClick={sortByIp}
+            className="text-xs px-3 py-1.5 rounded border font-medium"
+            style={{ borderColor: '#D3D1C7', color: '#2C2C2A', background: '#fff' }}
+            title="Sort devices by IP address">
+            Sort by IP
+          </button>
+          <button onClick={addBlankDevice}
+            className="text-xs px-3 py-1.5 rounded border font-medium"
+            style={{ borderColor: '#1D9E75', color: '#085041', background: '#E1F5EE' }}>
+            + Add Device
+          </button>
+        </div>
       </div>
 
       {/* Devices */}
