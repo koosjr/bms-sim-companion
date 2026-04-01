@@ -74,8 +74,9 @@ export interface SimPoint {
   base_value: number;
   noise_pct: number;
   // ThingsBoard metadata
-  data_category?: DataCategory;          // timeseries (default) | attribute | attribute_update | rpc
+  data_category?: DataCategory;             // timeseries (default) | attribute | attribute_update | rpc
   report_strategy?: TBReportStrategy | null; // null = auto-infer from point type/name
+  report_period_ms?: number;                // explicit period in ms (only used when strategy = ON_REPORT_PERIOD)
 }
 
 // ── Configured device ────────────────────────────────────────────────────────

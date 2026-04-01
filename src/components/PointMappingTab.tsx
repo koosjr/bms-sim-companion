@@ -59,6 +59,15 @@ const CATEGORY_LABELS: Record<DataCategory, string> = {
   rpc:              'RPC',
 };
 
+const PERIOD_UNIT_MS: Record<string, number> = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
+
+function msToDisplayPeriod(ms: number): { val: string; unit: string } {
+  if (ms >= 86400000 && ms % 86400000 === 0) return { val: String(ms / 86400000), unit: 'd' };
+  if (ms >= 3600000  && ms % 3600000  === 0) return { val: String(ms / 3600000),  unit: 'h' };
+  if (ms >= 60000    && ms % 60000    === 0) return { val: String(ms / 60000),    unit: 'm' };
+  return { val: String(ms / 1000), unit: 's' };
+}
+
 function effectiveStrategy(p: SimPoint): TBReportStrategy {
   if (p.report_strategy) return p.report_strategy;
   return inferReportStrategy(p.tag, p.object_type, p.io_type);
@@ -73,6 +82,8 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
   const [fillStart, setFillStart] = useState<Record<string, string>>({});
   const [showAddPoint, setShowAddPoint] = useState(false);
   const [newPoint, setNewPoint] = useState({ tag: '', description: '', io_type: 'AI' as IOType });
+  // Local display state for period inputs (tag → { val, unit })
+  const [periodInputs, setPeriodInputs] = useState<Record<string, { val: string; unit: string }>>({});
 
   const { devices } = state;
   const device = devices.find(d => d.id === activeDeviceId) ?? devices[0];
@@ -268,8 +279,8 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
         <button onClick={applyAutoStrategy}
           className="text-xs px-3 py-1.5 rounded border font-medium"
           style={{ borderColor: '#D3D1C7', color: '#888780' }}
-          title="Reset all report strategy overrides to Auto (inferred from point type)">
-          ↺ Reset strategies to Auto
+          title="Reset all report strategy overrides to Default (auto-inferred from point type)">
+          ↺ Reset strategies to Default
         </button>
       </div>
 
@@ -325,7 +336,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs border-b" style={{ background: '#F5F4EF', borderColor: '#D3D1C7' }}>
-                      <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780', minWidth: '160px' }}>Tag / Description</th>
+                      <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780', minWidth: '220px' }}>Tag / Description</th>
                       {device.protocol === 'modbus' ? (
                         <>
                           <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>FC</th>
@@ -337,7 +348,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                         <>
                           <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Object Type</th>
                           <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Instance</th>
-                          <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Units</th>
+                          <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Unit</th>
                           <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>COV Inc.</th>
                         </>
                       )}
@@ -368,7 +379,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                           className={rowError || rowWarn ? '' : 'hover:bg-gray-50'}>
 
                           {/* Tag + Description — always editable */}
-                          <td className="px-3 py-2" style={{ minWidth: '160px' }}>
+                          <td className="px-3 py-2" style={{ minWidth: '220px' }}>
                             <div className="flex items-center gap-1">
                               <input
                                 type="text"
@@ -443,7 +454,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                 {instanceDupe && <div className="text-xs mt-0.5 font-bold" style={{ color: '#E24B4A' }}>DUP</div>}
                               </td>
                               <td className="px-3 py-2">
-                                <select className={inputCls} style={{ ...inputStyle, width: '150px' }}
+                                <select className={inputCls} style={{ ...inputStyle, width: '100px' }}
                                   value={point.units}
                                   onChange={e => patchPoint(capturedTag, { units: e.target.value as BACnetUnits })}>
                                   {BACNET_UNITS_LIST.map(u => (
@@ -474,18 +485,66 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                           </td>
 
                           {/* Report Strategy */}
-                          <td className="px-3 py-2">
-                            <select className={inputCls}
-                              style={{ ...inputStyle, width: '90px', fontSize: '11px', padding: '2px 4px',
-                                ...(!stratIsAuto ? { borderColor: '#2563EB', background: '#EFF6FF', color: '#1d4ed8' } : {}) }}
-                              value={point.report_strategy ?? ''}
-                              onChange={e => patchPoint(capturedTag, {
-                                report_strategy: (e.target.value as TBReportStrategy | '') || null
-                              })}>
-                              <option value="">Auto ({strat === 'ON_VALUE_CHANGE' ? '∆' : '⏱'})</option>
-                              <option value="ON_REPORT_PERIOD">⏱ Period</option>
-                              <option value="ON_VALUE_CHANGE">∆ Change</option>
-                            </select>
+                          <td className="px-3 py-2" style={{ minWidth: '190px' }}>
+                            <div className="flex items-center gap-1">
+                              <select className={inputCls}
+                                style={{ ...inputStyle, width: '82px', fontSize: '11px', padding: '2px 4px',
+                                  ...(!stratIsAuto ? { borderColor: '#2563EB', background: '#EFF6FF', color: '#1d4ed8' } : {}) }}
+                                value={point.report_strategy ?? ''}
+                                onChange={e => {
+                                  const val = e.target.value as TBReportStrategy | '';
+                                  patchPoint(capturedTag, { report_strategy: val || null });
+                                  if (val === 'ON_REPORT_PERIOD' && !periodInputs[capturedTag]) {
+                                    setPeriodInputs(prev => ({
+                                      ...prev,
+                                      [capturedTag]: point.report_period_ms
+                                        ? msToDisplayPeriod(point.report_period_ms)
+                                        : { val: '60', unit: 's' },
+                                    }));
+                                  }
+                                }}>
+                                <option value="">Default</option>
+                                <option value="ON_REPORT_PERIOD">Period</option>
+                                <option value="ON_VALUE_CHANGE">Change</option>
+                              </select>
+                              {point.report_strategy === 'ON_REPORT_PERIOD' && (() => {
+                                const pi = periodInputs[capturedTag]
+                                  ?? (point.report_period_ms ? msToDisplayPeriod(point.report_period_ms) : { val: '60', unit: 's' });
+                                return (
+                                  <>
+                                    <input type="number" min="1"
+                                      className={inputCls}
+                                      style={{ ...inputStyle, width: '48px', fontSize: '11px', padding: '2px 4px' }}
+                                      value={pi.val}
+                                      onChange={e => {
+                                        const newVal = e.target.value;
+                                        setPeriodInputs(prev => ({ ...prev, [capturedTag]: { ...pi, val: newVal } }));
+                                        const ms = (parseFloat(newVal) || 0) * PERIOD_UNIT_MS[pi.unit];
+                                        if (ms > 0) patchPoint(capturedTag, { report_period_ms: ms });
+                                      }} />
+                                    <select className={inputCls}
+                                      style={{ ...inputStyle, width: '46px', fontSize: '11px', padding: '2px 4px' }}
+                                      value={pi.unit}
+                                      onChange={e => {
+                                        const newUnit = e.target.value;
+                                        setPeriodInputs(prev => ({ ...prev, [capturedTag]: { ...pi, unit: newUnit } }));
+                                        const ms = (parseFloat(pi.val) || 0) * PERIOD_UNIT_MS[newUnit];
+                                        if (ms > 0) patchPoint(capturedTag, { report_period_ms: ms });
+                                      }}>
+                                      <option>s</option>
+                                      <option>m</option>
+                                      <option>h</option>
+                                      <option>d</option>
+                                    </select>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                            {!point.report_strategy && (
+                              <div className="text-xs mt-0.5" style={{ color: '#aaa' }}>
+                                auto: {strat === 'ON_VALUE_CHANGE' ? '∆ change' : '⏱ period'}
+                              </div>
+                            )}
                           </td>
 
                           {/* Delete */}

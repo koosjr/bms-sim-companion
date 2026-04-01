@@ -13,10 +13,10 @@ function effectiveStrategy(p: SimPoint): TBReportStrategy {
   return inferReportStrategy(p.tag, p.object_type, p.io_type);
 }
 
-function strategyObj(strategy: TBReportStrategy, periodMs: number) {
-  return strategy === 'ON_VALUE_CHANGE'
-    ? { type: 'ON_VALUE_CHANGE' }
-    : { type: 'ON_REPORT_PERIOD', reportPeriod: periodMs };
+function strategyObj(strategy: TBReportStrategy, defaultPeriodMs: number, point?: SimPoint) {
+  if (strategy === 'ON_VALUE_CHANGE') return { type: 'ON_VALUE_CHANGE' };
+  const periodMs = point?.report_period_ms ?? defaultPeriodMs;
+  return { type: 'ON_REPORT_PERIOD', reportPeriod: periodMs };
 }
 
 // ── Modbus ────────────────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ export function generateTBModbusSlaves(devices: SimDevice[]): string {
         objectsCount: p.object_count,
         functionCode: p.function_code,
         ...(p.scale !== 1 ? { multiplier: 1 / p.scale } : {}),
-        reportStrategy: strategyObj(effectiveStrategy(p), defaultPeriodMs),
+        reportStrategy: strategyObj(effectiveStrategy(p), defaultPeriodMs, p),
       }));
 
       const attributes = byCategory.attribute.map(p => ({
@@ -120,7 +120,7 @@ export function generateTBBacnetDevices(devices: SimDevice[]): string {
         objectType: p.object_type,
         objectId:   resolveAddress(p.object_instance, base),
         propertyId: 'presentValue',
-        reportStrategy: strategyObj(effectiveStrategy(p), defaultPeriodMs),
+        reportStrategy: strategyObj(effectiveStrategy(p), defaultPeriodMs, p),
       }));
 
       const attributes = byCategory.attribute.map(p => ({
