@@ -6,7 +6,7 @@ import type {
   IOType, DataCategory, TBReportStrategy,
 } from '../types';
 import { validateDevice, affectedTags, duplicateInstanceKeys, duplicateRegisterKeys, hasCriticalIssues } from '../lib/validation';
-import { inferReportStrategy, inferUnits, inferDataCategory } from '../lib/pointDefaults';
+import { inferUnits, inferDataCategory } from '../lib/pointDefaults';
 
 interface Props {
   state: AppState;
@@ -66,11 +66,6 @@ function msToDisplayPeriod(ms: number): { val: string; unit: string } {
   if (ms >= 3600000  && ms % 3600000  === 0) return { val: String(ms / 3600000),  unit: 'h' };
   if (ms >= 60000    && ms % 60000    === 0) return { val: String(ms / 60000),    unit: 'm' };
   return { val: String(ms / 1000), unit: 's' };
-}
-
-function effectiveStrategy(p: SimPoint): TBReportStrategy {
-  if (p.report_strategy) return p.report_strategy;
-  return inferReportStrategy(p.tag, p.object_type, p.io_type);
 }
 
 function patchPointInDevice(device: SimDevice, pointTag: string, patch: Partial<SimPoint>): SimDevice {
@@ -367,7 +362,6 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                       const rowError = tagDupe || instanceDupe;
                       const rowWarn  = !rowError && registerDupe;
                       const cat = point.data_category ?? 'timeseries';
-                      const strat = effectiveStrategy(point);
                       const stratIsAuto = !point.report_strategy;
 
                       // Capture tag for stable closure in onChange handlers
@@ -540,11 +534,6 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                 );
                               })()}
                             </div>
-                            {!point.report_strategy && (
-                              <div className="text-xs mt-0.5" style={{ color: '#aaa' }}>
-                                auto: {strat === 'ON_VALUE_CHANGE' ? '∆ change' : '⏱ period'}
-                              </div>
-                            )}
                           </td>
 
                           {/* Delete */}
