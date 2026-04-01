@@ -201,7 +201,7 @@ export default function App() {
         {activeTab === 'supplier' && <SupplierImportTab onSaved={() => setActiveTab('devices')} />}
         {activeTab === 'import'   && <ImportTab state={state} onUpdate={update} onNext={() => setActiveTab('devices')} />}
         {activeTab === 'devices'  && <DeviceSetupTab state={state} onUpdate={update} onNext={() => setActiveTab('points')} />}
-        {activeTab === 'points'   && <PointMappingTab state={state} onUpdate={update} onNext={() => setActiveTab('values')} />}
+        {activeTab === 'points'   && <PointMappingTab state={state} onUpdate={update} onNext={() => setActiveTab('values')} onExport={exportProject} />}
         {activeTab === 'values'   && <SimValuesTab state={state} onUpdate={update} onNext={() => setActiveTab('generate')} />}
         {activeTab === 'generate' && <GenerateTab state={state} onUpdate={update} />}
       </div>

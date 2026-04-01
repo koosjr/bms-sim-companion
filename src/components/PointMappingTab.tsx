@@ -12,6 +12,7 @@ interface Props {
   state: AppState;
   onUpdate: (patch: Partial<AppState>) => void;
   onNext: () => void;
+  onExport?: () => void;
 }
 
 const inputCls = "border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400";
@@ -73,11 +74,11 @@ function msToDisplayPeriod(ms: number): { val: string; unit: string } {
   return { val: String(ms / 1000), unit: 's' };
 }
 
-function patchPointInDevice(device: SimDevice, pointTag: string, patch: Partial<SimPoint>): SimDevice {
-  return { ...device, points: device.points.map(p => p.tag === pointTag ? { ...p, ...patch } : p) };
+function patchPointInDevice(device: SimDevice, pointIdx: number, patch: Partial<SimPoint>): SimDevice {
+  return { ...device, points: device.points.map((p, i) => i === pointIdx ? { ...p, ...patch } : p) };
 }
 
-export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
+export default function PointMappingTab({ state, onUpdate, onNext, onExport }: Props) {
   const [activeDeviceId, setActiveDeviceId] = useState<string>(state.devices[0]?.id ?? '');
   const [fillStart, setFillStart] = useState<Record<string, string>>({});
   const [showAddPoint, setShowAddPoint] = useState(false);
@@ -88,15 +89,15 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
   const { devices } = state;
   const device = devices.find(d => d.id === activeDeviceId) ?? devices[0];
 
-  function patchPoint(currentTag: string, patch: Partial<SimPoint>) {
+  function patchPoint(pointIdx: number, patch: Partial<SimPoint>) {
     if (!device) return;
-    const updated = patchPointInDevice(device, currentTag, patch);
+    const updated = patchPointInDevice(device, pointIdx, patch);
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
-  function deletePoint(tag: string) {
+  function deletePoint(pointIdx: number) {
     if (!device) return;
-    const updated = { ...device, points: device.points.filter(p => p.tag !== tag) };
+    const updated = { ...device, points: device.points.filter((_, i) => i !== pointIdx) };
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
@@ -199,11 +200,13 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     <div className="text-sm" style={{ color: '#888780' }}>No devices configured. Go back to Device Setup.</div>
   );
 
-  const groups: Record<string, SimPoint[]> = {};
+  // Track original index so patchPoint/deletePoint target the exact point even with duplicate tags
+  const groups: Record<string, Array<{ point: SimPoint; origIdx: number }>> = {};
   for (const io of IO_ORDER) groups[io] = [];
-  for (const p of device.points) {
+  for (let i = 0; i < device.points.length; i++) {
+    const p = device.points[i];
     const key = p.io_type in groups ? p.io_type : 'AI';
-    groups[key].push(p);
+    groups[key].push({ point: p, origIdx: i });
   }
 
   return (
@@ -367,7 +370,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                           <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Object Type</th>
                           <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Instance</th>
                           <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Unit</th>
-                          <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>COV Inc.</th>
+                          <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Multiplier</th>
                         </>
                       )}
                       <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Category</th>
@@ -376,7 +379,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: '#F1EFE8' }}>
-                    {pts.map((point, idx) => {
+                    {pts.map(({ point, origIdx }) => {
                       const tagDupe = badTags.has(point.tag);
                       const instanceKey = `${point.object_type}:${point.object_instance}`;
                       const instanceDupe = device.protocol === 'bacnet' && badInstances.has(instanceKey);
@@ -386,12 +389,10 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                       const rowWarn  = !rowError && registerDupe;
                       const cat = point.data_category ?? 'timeseries';
                       const stratIsAuto = !point.report_strategy;
-
-                      // Capture tag for stable closure in onChange handlers
-                      const capturedTag = point.tag;
+                      const pidKey = String(origIdx); // stable key for periodInputs, unaffected by tag changes
 
                       return (
-                        <tr key={idx}
+                        <tr key={origIdx}
                           style={rowError ? { background: '#FDF0F0' } : rowWarn ? { background: '#FFFBF0' } : undefined}
                           className={rowError || rowWarn ? '' : 'hover:bg-gray-50'}>
 
@@ -403,7 +404,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                 className="font-mono text-xs font-bold bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-400 outline-none w-full"
                                 style={{ color: rowError ? '#A32D2D' : '#2C2C2A' }}
                                 value={point.tag}
-                                onChange={e => patchPoint(capturedTag, { tag: e.target.value.toUpperCase() })}
+                                onChange={e => patchPoint(origIdx, { tag: e.target.value.toUpperCase() })}
                               />
                               {tagDupe && <span className="text-xs px-1 rounded font-bold flex-shrink-0" style={{ background: '#E24B4A', color: '#fff' }}>DUP TAG</span>}
                             </div>
@@ -413,7 +414,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                               style={{ color: '#888780' }}
                               placeholder="description…"
                               value={point.description}
-                              onChange={e => patchPoint(capturedTag, { description: e.target.value })}
+                              onChange={e => patchPoint(origIdx, { description: e.target.value })}
                             />
                           </td>
 
@@ -423,7 +424,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                               <td className="px-3 py-2">
                                 <select className={inputCls} style={{ ...inputStyle, width: '70px' }}
                                   value={point.function_code}
-                                  onChange={e => patchPoint(capturedTag, { function_code: Number(e.target.value) as ModbusFunctionCode })}>
+                                  onChange={e => patchPoint(origIdx, { function_code: Number(e.target.value) as ModbusFunctionCode })}>
                                   <option value={1}>FC1</option>
                                   <option value={2}>FC2</option>
                                   <option value={3}>FC3</option>
@@ -434,13 +435,13 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                 <input type="number" className={inputCls}
                                   style={{ ...inputStyle, width: '90px', ...(registerDupe ? { borderColor: '#EF9F27', background: '#FFFBF0' } : {}) }}
                                   value={point.register}
-                                  onChange={e => patchPoint(capturedTag, { register: Number(e.target.value) })} />
+                                  onChange={e => patchPoint(origIdx, { register: Number(e.target.value) })} />
                                 {registerDupe && <div className="text-xs mt-0.5 font-bold" style={{ color: '#EF9F27' }}>DUP</div>}
                               </td>
                               <td className="px-3 py-2">
                                 <select className={inputCls} style={{ ...inputStyle, width: '100px' }}
                                   value={point.data_type}
-                                  onChange={e => patchPoint(capturedTag, { data_type: e.target.value as ModbusDataType })}>
+                                  onChange={e => patchPoint(origIdx, { data_type: e.target.value as ModbusDataType })}>
                                   {(['bool','16int','16uint','32float','32int','32uint'] as ModbusDataType[]).map(t => (
                                     <option key={t} value={t}>{t}</option>
                                   ))}
@@ -449,7 +450,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                               <td className="px-3 py-2">
                                 <input type="number" step="0.1" className={inputCls} style={{ ...inputStyle, width: '70px' }}
                                   value={point.scale}
-                                  onChange={e => patchPoint(capturedTag, { scale: Number(e.target.value) })} />
+                                  onChange={e => patchPoint(origIdx, { scale: Number(e.target.value) })} />
                               </td>
                             </>
                           ) : (
@@ -460,7 +461,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                   onChange={e => {
                                     const newType = e.target.value as BACnetObjectType;
                                     const inferred = inferReportStrategy(point.tag, newType, point.io_type);
-                                    patchPoint(capturedTag, {
+                                    patchPoint(origIdx, {
                                       object_type: newType,
                                       report_strategy: inferred === 'ON_VALUE_CHANGE' ? 'ON_VALUE_CHANGE' : null,
                                     });
@@ -474,13 +475,13 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                 <input type="number" className={inputCls}
                                   style={{ ...inputStyle, width: '80px', ...(instanceDupe ? { borderColor: '#E24B4A', background: '#FFF0F0' } : {}) }}
                                   value={point.object_instance}
-                                  onChange={e => patchPoint(capturedTag, { object_instance: Number(e.target.value) })} />
+                                  onChange={e => patchPoint(origIdx, { object_instance: Number(e.target.value) })} />
                                 {instanceDupe && <div className="text-xs mt-0.5 font-bold" style={{ color: '#E24B4A' }}>DUP</div>}
                               </td>
                               <td className="px-3 py-2">
                                 <select className={inputCls} style={{ ...inputStyle, width: '100px' }}
                                   value={point.units}
-                                  onChange={e => patchPoint(capturedTag, { units: e.target.value as BACnetUnits })}>
+                                  onChange={e => patchPoint(origIdx, { units: e.target.value as BACnetUnits })}>
                                   {BACNET_UNITS_LIST.map(u => (
                                     <option key={u.value} value={u.value}>{u.label}</option>
                                   ))}
@@ -490,7 +491,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                 <input type="number" step="0.1" className={inputCls}
                                   style={{ ...inputStyle, width: '70px', ...(instanceDupe ? { borderColor: '#E24B4A', background: '#FFF0F0' } : {}) }}
                                   value={point.cov_increment}
-                                  onChange={e => patchPoint(capturedTag, { cov_increment: Number(e.target.value) })} />
+                                  onChange={e => patchPoint(origIdx, { cov_increment: Number(e.target.value) })} />
                               </td>
                             </>
                           )}
@@ -501,7 +502,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                               style={{ ...inputStyle, width: '74px', fontSize: '11px', padding: '2px 4px',
                                 ...(cat !== 'timeseries' ? { borderColor: '#7C3AED', background: '#F5F0FF', color: '#5b21b6' } : {}) }}
                               value={cat}
-                              onChange={e => patchPoint(capturedTag, { data_category: e.target.value as DataCategory })}>
+                              onChange={e => patchPoint(origIdx, { data_category: e.target.value as DataCategory })}>
                               {(['timeseries','attribute','attribute_update','rpc'] as DataCategory[]).map(c => (
                                 <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
                               ))}
@@ -517,11 +518,11 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                 value={point.report_strategy ?? ''}
                                 onChange={e => {
                                   const val = e.target.value as TBReportStrategy | '';
-                                  patchPoint(capturedTag, { report_strategy: val || null });
-                                  if (val === 'ON_REPORT_PERIOD' && !periodInputs[capturedTag]) {
+                                  patchPoint(origIdx, { report_strategy: val || null });
+                                  if (val === 'ON_REPORT_PERIOD' && !periodInputs[pidKey]) {
                                     setPeriodInputs(prev => ({
                                       ...prev,
-                                      [capturedTag]: point.report_period_ms
+                                      [pidKey]: point.report_period_ms
                                         ? msToDisplayPeriod(point.report_period_ms)
                                         : { val: '60', unit: 's' },
                                     }));
@@ -532,7 +533,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                 <option value="ON_VALUE_CHANGE">Change</option>
                               </select>
                               {point.report_strategy === 'ON_REPORT_PERIOD' && (() => {
-                                const pi = periodInputs[capturedTag]
+                                const pi = periodInputs[pidKey]
                                   ?? (point.report_period_ms ? msToDisplayPeriod(point.report_period_ms) : { val: '60', unit: 's' });
                                 return (
                                   <>
@@ -542,18 +543,18 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                       value={pi.val}
                                       onChange={e => {
                                         const newVal = e.target.value;
-                                        setPeriodInputs(prev => ({ ...prev, [capturedTag]: { ...pi, val: newVal } }));
+                                        setPeriodInputs(prev => ({ ...prev, [pidKey]: { ...pi, val: newVal } }));
                                         const ms = (parseFloat(newVal) || 0) * PERIOD_UNIT_MS[pi.unit];
-                                        if (ms > 0) patchPoint(capturedTag, { report_period_ms: ms });
+                                        if (ms > 0) patchPoint(origIdx, { report_period_ms: ms });
                                       }} />
                                     <select className={inputCls}
                                       style={{ ...inputStyle, width: '46px', fontSize: '11px', padding: '2px 4px' }}
                                       value={pi.unit}
                                       onChange={e => {
                                         const newUnit = e.target.value;
-                                        setPeriodInputs(prev => ({ ...prev, [capturedTag]: { ...pi, unit: newUnit } }));
+                                        setPeriodInputs(prev => ({ ...prev, [pidKey]: { ...pi, unit: newUnit } }));
                                         const ms = (parseFloat(pi.val) || 0) * PERIOD_UNIT_MS[newUnit];
-                                        if (ms > 0) patchPoint(capturedTag, { report_period_ms: ms });
+                                        if (ms > 0) patchPoint(origIdx, { report_period_ms: ms });
                                       }}>
                                       <option>s</option>
                                       <option>m</option>
@@ -568,7 +569,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
 
                           {/* Delete */}
                           <td className="px-2 py-2">
-                            <button onClick={() => deletePoint(point.tag)}
+                            <button onClick={() => deletePoint(origIdx)}
                               className="text-xs px-2 py-0.5 rounded border opacity-40 hover:opacity-100 transition-opacity"
                               style={{ borderColor: '#E24B4A', color: '#E24B4A' }}
                               title="Delete point">
@@ -636,10 +637,19 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
         )}
       </div>
 
-      <button onClick={onNext} className="mt-4 px-5 py-2 rounded text-sm font-medium text-white"
-        style={{ background: '#1D9E75' }}>
-        Next: Simulation Values →
-      </button>
+      <div className="mt-4 flex items-center gap-3">
+        {onExport && (
+          <button onClick={onExport} className="px-5 py-2 rounded text-sm font-medium border"
+            style={{ borderColor: '#1D9E75', color: '#1D9E75', background: '#fff' }}
+            title="Export current assembly as JSON file">
+            ↓ Save Assembly
+          </button>
+        )}
+        <button onClick={onNext} className="px-5 py-2 rounded text-sm font-medium text-white"
+          style={{ background: '#1D9E75' }}>
+          Next: Simulation Values →
+        </button>
+      </div>
     </div>
   );
 }
