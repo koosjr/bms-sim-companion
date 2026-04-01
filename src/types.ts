@@ -42,6 +42,8 @@ export type BACnetUnits =
   | 'volts' | 'amperes'
   | 'kilovoltAmperes' | 'kilovoltAmperesReactive'
   | 'kilowatts' | 'watts'
+  | 'kilogramsPerHour' | 'litersPerHour' | 'litersPerSecond' | 'litersPerMinute'
+  | 'revolutionsPerMinute'
   | 'partsPerMillion'
   | 'noUnits';
 

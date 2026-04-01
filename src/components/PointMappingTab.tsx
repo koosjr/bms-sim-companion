@@ -6,7 +6,7 @@ import type {
   IOType, DataCategory, TBReportStrategy,
 } from '../types';
 import { validateDevice, affectedTags, duplicateInstanceKeys, duplicateRegisterKeys, hasCriticalIssues } from '../lib/validation';
-import { inferUnits, inferDataCategory } from '../lib/pointDefaults';
+import { inferUnits, inferDataCategory, inferReportStrategy } from '../lib/pointDefaults';
 
 interface Props {
   state: AppState;
@@ -48,6 +48,11 @@ const BACNET_UNITS_LIST: { value: BACnetUnits; label: string }[] = [
   { value: 'watts',                     label: 'W'       },
   { value: 'percentOpen',               label: '% Open'  },
   { value: 'percentClose',              label: '% Close' },
+  { value: 'kilogramsPerHour',          label: 'kg/h'    },
+  { value: 'litersPerHour',             label: 'l/h'     },
+  { value: 'litersPerSecond',           label: 'l/s'     },
+  { value: 'litersPerMinute',           label: 'l/min'   },
+  { value: 'revolutionsPerMinute',      label: 'rpm'     },
   { value: 'partsPerMillion',           label: 'ppm'     },
   { value: 'noUnits',                   label: '—'       },
 ];
@@ -138,7 +143,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
-  /** Clear all per-point report strategy overrides back to Default */
+  /** Clear all per-point report strategy overrides back to Default (null = connector default) */
   function applyAutoStrategy() {
     if (!device) return;
     const updated = {
@@ -147,6 +152,19 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     };
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
     setPeriodInputs({});
+  }
+
+  /** Auto-populate report strategy on all points based on object type, IO type and tag keywords */
+  function autoInferStrategies() {
+    if (!device) return;
+    const updated = {
+      ...device,
+      points: device.points.map(p => ({
+        ...p,
+        report_strategy: inferReportStrategy(p.tag, p.object_type, p.io_type),
+      })),
+    };
+    onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
   function addPointManually() {
@@ -270,10 +288,16 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
             ✦ Auto-units
           </button>
         )}
+        <button onClick={autoInferStrategies}
+          className="text-xs px-3 py-1.5 rounded border font-medium"
+          style={{ borderColor: '#2563EB', color: '#1d4ed8', background: '#EFF6FF' }}
+          title="Set report strategy on all points based on object type, IO type and tag keywords">
+          ✦ Auto-report
+        </button>
         <button onClick={applyAutoStrategy}
           className="text-xs px-3 py-1.5 rounded border font-medium"
           style={{ borderColor: '#D3D1C7', color: '#888780' }}
-          title="Reset all report strategy overrides to Default (auto-inferred from point type)">
+          title="Clear all report strategy overrides to Default (uses connector-level default)">
           ↺ Reset strategies to Default
         </button>
       </div>
@@ -433,7 +457,13 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                               <td className="px-3 py-2">
                                 <select className={inputCls} style={{ ...inputStyle, width: '140px' }}
                                   value={point.object_type}
-                                  onChange={e => patchPoint(capturedTag, { object_type: e.target.value as BACnetObjectType })}>
+                                  onChange={e => {
+                                    const newType = e.target.value as BACnetObjectType;
+                                    patchPoint(capturedTag, {
+                                      object_type: newType,
+                                      report_strategy: inferReportStrategy(point.tag, newType, point.io_type),
+                                    });
+                                  }}>
                                   {(['analogInput','analogOutput','analogValue','binaryInput','binaryOutput','binaryValue','multiStateValue'] as BACnetObjectType[]).map(t => (
                                     <option key={t} value={t}>{t}</option>
                                   ))}

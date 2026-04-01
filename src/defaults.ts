@@ -4,7 +4,7 @@ import type {
   ImportedPoint, ImportedDevice, SimPoint, SimDevice,
   Protocol, ModbusFunctionCode, ModbusDataType, BACnetObjectType, BACnetUnits, IOType,
 } from './types';
-import { inferDataCategory } from './lib/pointDefaults';
+import { inferDataCategory, inferReportStrategy } from './lib/pointDefaults';
 
 // ── QTY-based sim value defaults ─────────────────────────────────────────────
 
@@ -68,6 +68,7 @@ export function defaultSimPoint(
 ): SimPoint {
   const { fc, dt, scale } = modbusDefaults(imported.io_type);
   const sim = simDefaults(imported.tag);
+  const objType = bacnetObjectType(imported.io_type);
 
   return {
     tag: imported.tag,
@@ -80,7 +81,7 @@ export function defaultSimPoint(
     scale,
     object_count: 1,
     // BACnet
-    object_type: bacnetObjectType(imported.io_type),
+    object_type: objType,
     object_instance: instanceIndex,
     units: bacnetUnits(imported.tag),
     cov_increment: imported.io_type === 'AI' || imported.io_type === 'AO' ? 0.1 : 0,
@@ -89,7 +90,7 @@ export function defaultSimPoint(
     noise_pct: sim.noise,
     // ThingsBoard metadata
     data_category: inferDataCategory(imported.tag),
-    report_strategy: null, // null = auto-infer at export time
+    report_strategy: inferReportStrategy(imported.tag, objType, imported.io_type),
   };
 }
 

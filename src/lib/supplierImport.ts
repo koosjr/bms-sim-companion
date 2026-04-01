@@ -125,6 +125,11 @@ const UNITS_MAP: [string[], BACnetUnits][] = [
   [['kvar', 'kilovoltamperereactive'],                     'kilovoltAmperesReactive'],
   [['kw', 'kilowatt'],                                     'kilowatts'],
   [['w', 'watt'],                                          'watts'],
+  [['kg/h', 'kgh', 'kilogramsperhour'],                   'kilogramsPerHour'],
+  [['l/h', 'lh', 'litresperhour', 'litershour'],          'litersPerHour'],
+  [['l/s', 'ls', 'litrespersecond', 'literssecond'],      'litersPerSecond'],
+  [['l/min', 'lmin', 'litresperminute', 'litersminute'],  'litersPerMinute'],
+  [['rpm', 'rev/min', 'revolutionsperminute'],             'revolutionsPerMinute'],
   [['ppm'],                                                'partsPerMillion'],
 ];
 
