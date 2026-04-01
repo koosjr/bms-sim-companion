@@ -244,7 +244,7 @@ export function buildSimPoints(
         object_type: 'analogInput',
         object_instance: 0,
         units,
-        cov_increment: 0.1,
+        cov_increment: 1,
         base_value: 0,
         noise_pct: 1,
       };
@@ -271,7 +271,7 @@ export function buildSimPoints(
         object_type: resolvedObjectType,
         object_instance: addr ?? 0,
         units,
-        cov_increment: resolvedObjectType.startsWith('binary') ? 0 : 0.1,
+        cov_increment: resolvedObjectType.startsWith('binary') ? 0 : 1,
         base_value: 0,
         noise_pct: 1,
       };

@@ -178,7 +178,7 @@ export default function PointMappingTab({ state, onUpdate, onNext, onExport }: P
       function_code: 3, register: 0, data_type: '16uint', scale: 1, object_count: 1,
       object_type: 'analogInput', object_instance: 0,
       units: inferUnits(tag) ?? 'noUnits',
-      cov_increment: 0.1,
+      cov_increment: 1,
       base_value: 0, noise_pct: 0,
       data_category: inferDataCategory(tag),
       report_strategy: null,

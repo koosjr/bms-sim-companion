@@ -84,7 +84,7 @@ export function defaultSimPoint(
     object_type: objType,
     object_instance: instanceIndex,
     units: bacnetUnits(imported.tag),
-    cov_increment: imported.io_type === 'AI' || imported.io_type === 'AO' ? 0.1 : 0,
+    cov_increment: imported.io_type === 'AI' || imported.io_type === 'AO' ? 1 : 0,
     // Sim values
     base_value: sim.base,
     noise_pct: sim.noise,
