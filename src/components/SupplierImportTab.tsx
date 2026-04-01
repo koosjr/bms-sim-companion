@@ -138,6 +138,7 @@ const TARGET_FIELDS_MODBUS: { field: keyof ColumnMapping; label: string; require
   { field: 'functionCode', label: 'Function Code', required: false },
   { field: 'dataType',     label: 'Data Type',     required: false },
   { field: 'scaleFactor',  label: 'Scale Factor',  required: false },
+  { field: 'multiplier',   label: 'Multiplier',    required: false },
   { field: 'units',        label: 'Units',         required: false },
   { field: 'access',       label: 'R/W Access',    required: false },
 ];
@@ -147,6 +148,7 @@ const TARGET_FIELDS_BACNET: { field: keyof ColumnMapping; label: string; require
   { field: 'address',     label: 'Instance',     required: true },
   { field: 'objectType',  label: 'Object Type',  required: false },
   { field: 'scaleFactor', label: 'Scale Factor', required: false },
+  { field: 'multiplier',  label: 'Multiplier',   required: false },
   { field: 'units',       label: 'Units',        required: false },
   { field: 'access',      label: 'R/W Access',   required: false },
 ];

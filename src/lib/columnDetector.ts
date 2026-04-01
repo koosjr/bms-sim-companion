@@ -4,7 +4,7 @@ export type DetectedProtocol = 'modbus' | 'bacnet' | 'unknown';
 
 export type TargetField =
   | 'pointName' | 'address' | 'functionCode' | 'dataType'
-  | 'scaleFactor' | 'units' | 'objectType' | 'access';
+  | 'scaleFactor' | 'multiplier' | 'units' | 'objectType' | 'access';
 
 // Patterns that indicate each protocol (checked against column names, case-insensitive)
 const MODBUS_HINTS = ['register', 'function_code', 'function code', 'modbus'];
@@ -17,7 +17,8 @@ const FIELD_RULES: FieldRule[] = [
   ['address',      ['register', 'address', 'instance', 'object_id', 'offset', 'addr'],    false, false],
   ['functionCode', ['fc', 'function_code', 'function code'],                               true,  false],
   ['dataType',     ['data_type', 'data type', 'format'],                                   true,  false],
-  ['scaleFactor',  ['scale', 'scale_factor', 'multiplier', 'factor'],                      false, false],
+  ['scaleFactor',  ['scale', 'scale_factor', 'factor'],                                     false, false],
+  ['multiplier',   ['multiplier', 'cov', 'cov_inc', 'cov_increment', 'cov increment'],      false, false],
   ['units',        ['units', 'unit', 'eng_range'],                                         false, false],
   ['objectType',   ['object_type', 'object type', 'type'],                                 false, true ],
   ['access',       ['access', 'r/w', 'rw', 'read_write'],                                  false, false],

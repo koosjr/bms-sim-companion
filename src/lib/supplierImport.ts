@@ -14,6 +14,7 @@ export interface ColumnMapping {
   functionCode?: string;
   dataType?: string;
   scaleFactor?: string;
+  multiplier?: string;   // BACnet COV increment / Modbus multiplier — optional table column
   units?: string;
   objectType?: string;
   access?: string;
@@ -220,6 +221,7 @@ export function buildSimPoints(
     const description = rawName;
     const scaleRaw = getCellNumber(row, mapping.scaleFactor, 1);
     const scale = scaleRaw !== 0 ? scaleRaw : 1;
+    const multiplierFromTable = mapping.multiplier ? getCellNumber(row, mapping.multiplier, NaN) : NaN;
     const unitsRaw = getCellString(row, mapping.units);
     const units = normaliseUnits(unitsRaw);
 
@@ -244,7 +246,7 @@ export function buildSimPoints(
         object_type: 'analogInput',
         object_instance: 0,
         units,
-        cov_increment: 1,
+        cov_increment: !isNaN(multiplierFromTable) ? multiplierFromTable : 1,
         base_value: 0,
         noise_pct: 1,
       };
@@ -271,7 +273,7 @@ export function buildSimPoints(
         object_type: resolvedObjectType,
         object_instance: addr ?? 0,
         units,
-        cov_increment: resolvedObjectType.startsWith('binary') ? 0 : 1,
+        cov_increment: !isNaN(multiplierFromTable) ? multiplierFromTable : resolvedObjectType.startsWith('binary') ? 0 : 1,
         base_value: 0,
         noise_pct: 1,
       };
