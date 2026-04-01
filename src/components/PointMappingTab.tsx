@@ -154,15 +154,15 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     setPeriodInputs({});
   }
 
-  /** Auto-populate report strategy on all points based on object type, IO type and tag keywords */
+  /** Auto-populate report strategy: sets Change on binary/multistate/keyword points, leaves others as Default */
   function autoInferStrategies() {
     if (!device) return;
     const updated = {
       ...device,
-      points: device.points.map(p => ({
-        ...p,
-        report_strategy: inferReportStrategy(p.tag, p.object_type, p.io_type),
-      })),
+      points: device.points.map(p => {
+        const inferred = inferReportStrategy(p.tag, p.object_type, p.io_type);
+        return { ...p, report_strategy: inferred === 'ON_VALUE_CHANGE' ? 'ON_VALUE_CHANGE' as const : null };
+      }),
     };
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
@@ -459,9 +459,10 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                   value={point.object_type}
                                   onChange={e => {
                                     const newType = e.target.value as BACnetObjectType;
+                                    const inferred = inferReportStrategy(point.tag, newType, point.io_type);
                                     patchPoint(capturedTag, {
                                       object_type: newType,
-                                      report_strategy: inferReportStrategy(point.tag, newType, point.io_type),
+                                      report_strategy: inferred === 'ON_VALUE_CHANGE' ? 'ON_VALUE_CHANGE' : null,
                                     });
                                   }}>
                                   {(['analogInput','analogOutput','analogValue','binaryInput','binaryOutput','binaryValue','multiStateValue'] as BACnetObjectType[]).map(t => (

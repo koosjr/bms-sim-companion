@@ -90,7 +90,9 @@ export function defaultSimPoint(
     noise_pct: sim.noise,
     // ThingsBoard metadata
     data_category: inferDataCategory(imported.tag),
-    report_strategy: inferReportStrategy(imported.tag, objType, imported.io_type),
+    report_strategy: inferReportStrategy(imported.tag, objType, imported.io_type) === 'ON_VALUE_CHANGE'
+      ? 'ON_VALUE_CHANGE'
+      : null,
   };
 }
 
