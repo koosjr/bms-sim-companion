@@ -39,9 +39,18 @@ export type BACnetUnits =
   | 'degreesCelsius' | 'degreesKelvin'
   | 'pascals' | 'kilopascals'
   | 'percent'
+  | 'partsPerMillion'
   | 'cubicMetersPerHour' | 'litersPerSecond'
   | 'hertz' | 'revolutionsPerMinute'
   | 'noUnits';
+
+// ── ThingsBoard metadata ──────────────────────────────────────────────────────
+
+/** Where the point is sent in the ThingsBoard connector */
+export type DataCategory = 'timeseries' | 'attribute' | 'attribute_update' | 'rpc';
+
+/** Per-point reporting strategy override (null = auto-infer from point type/name) */
+export type TBReportStrategy = 'ON_REPORT_PERIOD' | 'ON_VALUE_CHANGE';
 
 // ── Configured point (protocol addressing + sim values) ──────────────────────
 
@@ -63,6 +72,9 @@ export interface SimPoint {
   // Sim values (engineering units)
   base_value: number;
   noise_pct: number;
+  // ThingsBoard metadata
+  data_category?: DataCategory;          // timeseries (default) | attribute | attribute_update | rpc
+  report_strategy?: TBReportStrategy | null; // null = auto-infer from point type/name
 }
 
 // ── Configured device ────────────────────────────────────────────────────────

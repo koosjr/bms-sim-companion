@@ -241,6 +241,12 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
                     <input className={inputCls} style={inputStyle} value={device.name}
                       onChange={e => patchDevice(device.id, { name: e.target.value })} />
                   </Field>
+                  <Field label="Device Profile">
+                    <input className={inputCls} style={inputStyle}
+                      placeholder="e.g. AHULARGE, CONDAIR_HU, DSE_GEN"
+                      value={device.profile_name}
+                      onChange={e => patchDevice(device.id, { profile_name: e.target.value })} />
+                  </Field>
                   <Field label="Protocol">
                     <select className={inputCls} style={inputStyle} value={device.protocol}
                       onChange={e => patchDevice(device.id, { protocol: e.target.value as Protocol })}>

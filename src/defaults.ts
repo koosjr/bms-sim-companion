@@ -4,6 +4,7 @@ import type {
   ImportedPoint, ImportedDevice, SimPoint, SimDevice,
   Protocol, ModbusFunctionCode, ModbusDataType, BACnetObjectType, BACnetUnits, IOType,
 } from './types';
+import { inferDataCategory } from './lib/pointDefaults';
 
 // ── QTY-based sim value defaults ─────────────────────────────────────────────
 
@@ -85,6 +86,9 @@ export function defaultSimPoint(
     // Sim values
     base_value: sim.base,
     noise_pct: sim.noise,
+    // ThingsBoard metadata
+    data_category: inferDataCategory(imported.tag),
+    report_strategy: null, // null = auto-infer at export time
   };
 }
 
