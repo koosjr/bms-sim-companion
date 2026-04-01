@@ -48,10 +48,12 @@ export function inferReportStrategy(
  */
 export function inferUnits(tag: string): BACnetUnits | null {
   const t = tag.toLowerCase();
-  if (t.includes('temp'))     return 'degreesCelsius';
-  if (t.includes('humid'))    return 'percent';
-  if (t.includes('pressure')) return 'kilopascals';
-  if (t.includes('co2'))      return 'partsPerMillion';
+  if (t.includes('tmp') || t.includes('temp'))        return 'degreesCelsius';
+  if (t.includes('hum'))                              return 'percent';
+  if (t.includes('vlv') || t.includes('dmp'))         return 'percentOpen';
+  if (t.includes('dpr'))                              return 'pascals';
+  if (t.includes('prs'))                              return 'kilopascals';
+  if (t.includes('co2'))                              return 'partsPerMillion';
   return null;
 }
 

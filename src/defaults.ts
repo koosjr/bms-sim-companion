@@ -51,10 +51,11 @@ function bacnetObjectType(io: IOType): BACnetObjectType {
 }
 
 function bacnetUnits(tag: string): BACnetUnits {
-  if (tag.includes('TMP')) return 'degreesCelsius';
-  if (tag.includes('PRS') || tag.includes('DPR')) return 'pascals';
-  if (tag.includes('HUM') || tag.includes('VLV') || tag.includes('DMP')) return 'percent';
-  if (tag.includes('FLW')) return 'litersPerSecond';
+  if (tag.includes('TMP'))                          return 'degreesCelsius';
+  if (tag.includes('PRS'))                          return 'kilopascals';
+  if (tag.includes('DPR'))                          return 'pascals';
+  if (tag.includes('HUM'))                          return 'percent';
+  if (tag.includes('VLV') || tag.includes('DMP'))   return 'percentOpen';
   return 'noUnits';
 }
 

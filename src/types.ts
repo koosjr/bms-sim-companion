@@ -36,12 +36,13 @@ export type BACnetObjectType =
   | 'binaryInput' | 'binaryOutput' | 'binaryValue'
   | 'multiStateValue';
 export type BACnetUnits =
-  | 'degreesCelsius' | 'degreesKelvin'
-  | 'pascals' | 'kilopascals'
-  | 'percent'
+  | 'degreesCelsius'
+  | 'percent' | 'percentOpen' | 'percentClose'
+  | 'kilopascals' | 'pascals' | 'bars' | 'poundsForcePerSquareInch'
+  | 'volts' | 'amperes'
+  | 'kilovoltAmperes' | 'kilovoltAmperesReactive'
+  | 'kilowatts' | 'watts'
   | 'partsPerMillion'
-  | 'cubicMetersPerHour' | 'litersPerSecond'
-  | 'hertz' | 'revolutionsPerMinute'
   | 'noUnits';
 
 // ── ThingsBoard metadata ──────────────────────────────────────────────────────

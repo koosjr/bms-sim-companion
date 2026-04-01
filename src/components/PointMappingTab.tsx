@@ -33,10 +33,23 @@ const DEFAULT_DTYPE: Record<string, ModbusDataType> = {
   AI: '16int', AO: '16int', DI: '16uint', DO: '16uint', AV: '16int', BV: '16uint',
 };
 
-const BACNET_UNITS_LIST: BACnetUnits[] = [
-  'degreesCelsius', 'degreesKelvin', 'pascals', 'kilopascals', 'percent',
-  'partsPerMillion', 'cubicMetersPerHour', 'litersPerSecond',
-  'hertz', 'revolutionsPerMinute', 'noUnits',
+const BACNET_UNITS_LIST: { value: BACnetUnits; label: string }[] = [
+  { value: 'degreesCelsius',            label: '°C'      },
+  { value: 'percent',                   label: '%'       },
+  { value: 'kilopascals',               label: 'kPa'     },
+  { value: 'pascals',                   label: 'Pa'      },
+  { value: 'bars',                      label: 'Bar'     },
+  { value: 'poundsForcePerSquareInch',  label: 'psi'     },
+  { value: 'volts',                     label: 'V'       },
+  { value: 'amperes',                   label: 'A'       },
+  { value: 'kilovoltAmperes',           label: 'kVA'     },
+  { value: 'kilovoltAmperesReactive',   label: 'kVAr'    },
+  { value: 'kilowatts',                 label: 'kW'      },
+  { value: 'watts',                     label: 'W'       },
+  { value: 'percentOpen',               label: '% Open'  },
+  { value: 'percentClose',              label: '% Close' },
+  { value: 'partsPerMillion',           label: 'ppm'     },
+  { value: 'noUnits',                   label: '—'       },
 ];
 
 const CATEGORY_LABELS: Record<DataCategory, string> = {
@@ -434,7 +447,7 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
                                   value={point.units}
                                   onChange={e => patchPoint(capturedTag, { units: e.target.value as BACnetUnits })}>
                                   {BACNET_UNITS_LIST.map(u => (
-                                    <option key={u} value={u}>{u}</option>
+                                    <option key={u.value} value={u.value}>{u.label}</option>
                                   ))}
                                 </select>
                               </td>

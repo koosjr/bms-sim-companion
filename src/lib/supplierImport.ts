@@ -111,17 +111,21 @@ export function normaliseObjectType(raw: string): BACnetObjectType | null {
 // ── Normalisation: units ──────────────────────────────────────────────────────
 
 const UNITS_MAP: [string[], BACnetUnits][] = [
-  [['°c', 'degc', 'celsius'],                             'degreesCelsius'],
-  // Fahrenheit is not a BACnet standard unit enum value — fall through to noUnits
-  // rather than silently mislabelling as Celsius.
-  [['k', 'kelvin'],                                        'degreesKelvin'],
+  [['°c', 'degc', 'celsius'],                              'degreesCelsius'],
   [['kpa', 'kilopascal'],                                  'kilopascals'],
   [['pa', 'pascal'],                                       'pascals'],
-  [['%', 'percent', 'pct'],                               'percent'],
-  [['m3/h', 'm³/h', 'cubicmetersperhour', 'm3h'],         'cubicMetersPerHour'],
-  [['l/s', 'ls', 'litrespersecond', 'literssecond'],      'litersPerSecond'],
-  [['hz', 'hertz'],                                        'hertz'],
-  [['rpm', 'revolutionsperm', 'rev/min'],                  'revolutionsPerMinute'],
+  [['bar', 'bars'],                                        'bars'],
+  [['psi'],                                                'poundsForcePerSquareInch'],
+  [['%', 'percent', 'pct'],                                'percent'],
+  [['% open', '%open'],                                    'percentOpen'],
+  [['% close', '%close'],                                  'percentClose'],
+  [['v', 'volt', 'volts'],                                 'volts'],
+  [['a', 'amp', 'amps', 'ampere', 'amperes'],              'amperes'],
+  [['kva', 'kilovoltampere'],                              'kilovoltAmperes'],
+  [['kvar', 'kilovoltamperereactive'],                     'kilovoltAmperesReactive'],
+  [['kw', 'kilowatt'],                                     'kilowatts'],
+  [['w', 'watt'],                                          'watts'],
+  [['ppm'],                                                'partsPerMillion'],
 ];
 
 export function normaliseUnits(raw: string): BACnetUnits {
