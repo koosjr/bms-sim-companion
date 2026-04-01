@@ -125,29 +125,28 @@ export default function PointMappingTab({ state, onUpdate, onNext }: Props) {
     onUpdate({ devices: devices.map(d => d.id === id ? { ...d, ...patch } : d) });
   }
 
-  /** Auto-infer units for all BACnet points that still have noUnits */
+  /** Auto-infer units for all BACnet points — overwrites any point where a keyword match is found */
   function autoInferUnits() {
     if (!device) return;
     const updated = {
       ...device,
       points: device.points.map(p => {
         const inferred = inferUnits(p.tag);
-        if (inferred && (p.units === 'noUnits' || !p.units)) return { ...p, units: inferred };
-        return p;
+        return inferred ? { ...p, units: inferred } : p;
       }),
     };
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
-  /** Apply auto report strategy to all points that still have null (auto) */
+  /** Clear all per-point report strategy overrides back to Default */
   function applyAutoStrategy() {
     if (!device) return;
-    // This just clears any explicit override back to null (auto)
     const updated = {
       ...device,
-      points: device.points.map(p => ({ ...p, report_strategy: null })),
+      points: device.points.map(p => ({ ...p, report_strategy: null, report_period_ms: undefined })),
     };
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
+    setPeriodInputs({});
   }
 
   function addPointManually() {
