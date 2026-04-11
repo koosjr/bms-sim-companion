@@ -39,11 +39,11 @@ def load_config() -> dict:
         return json.load(f)
 
 
-def noisy_value(base_raw: float, noise_pct: float) -> float:
+def noisy_value(base_raw: float, noise_pct: float) -> int:
     if noise_pct == 0:
-        return base_raw
+        return int(round(base_raw))
     delta = base_raw * (noise_pct / 100.0)
-    return base_raw + random.uniform(-delta, delta)
+    return int(round(base_raw + random.uniform(-delta, delta)))
 
 
 def is_binary(object_type: str) -> bool:
@@ -78,7 +78,7 @@ async def main() -> None:
             log.warning("Unknown object type %s for point %s — skipping", obj_type, point["tag"])
             continue
 
-        init_raw = noisy_value(point["base_value_raw"], point["noise_pct"])
+        init_raw = point["base_value_raw"]
         init_val: Real | Boolean = (
             Boolean(init_raw >= 1) if is_binary(obj_type) else Real(float(init_raw))
         )
@@ -97,19 +97,30 @@ async def main() -> None:
         log.info("Registered %s %s (%s) instance=%d",
                  obj_type, point["tag"], point.get("units", "noUnits"), point["object_instance"])
 
-    interval = config.get("update_interval_seconds", 5)
+    av_interval = config.get("av_interval_seconds", 30)
+    bv_interval = config.get("bv_interval_seconds", 120)
 
-    async def update_loop() -> None:
+    async def av_loop() -> None:
+        """Update analogue BACnet objects on the AV interval."""
         while True:
-            await asyncio.sleep(interval)
+            await asyncio.sleep(av_interval)
             for obj, point in bac_objects:
-                raw = noisy_value(point["base_value_raw"], point["noise_pct"])
-                if is_binary(point["object_type"]):
-                    obj.presentValue = Boolean(raw >= 1)
-                else:
+                if not is_binary(point["object_type"]):
+                    raw = noisy_value(point["base_value_raw"], point["noise_pct"])
                     obj.presentValue = Real(float(raw))
 
-    asyncio.create_task(update_loop())
+    async def bv_loop() -> None:
+        """Update binary BACnet objects on the BV interval."""
+        while True:
+            await asyncio.sleep(bv_interval)
+            for obj, point in bac_objects:
+                if is_binary(point["object_type"]):
+                    point["base_value_raw"] = 1 if random.randint(0, 100) >= 50 else 0
+                    log.info("Binary %s → %d", point["tag"], point["base_value_raw"])
+                    obj.presentValue = Boolean(point["base_value_raw"] >= 1)
+
+    asyncio.create_task(av_loop())
+    asyncio.create_task(bv_loop())
     log.info("BACnet simulator running. Waiting for requests...")
     await asyncio.get_event_loop().create_future()  # run forever
 

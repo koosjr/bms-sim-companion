@@ -31,16 +31,26 @@ def load_config() -> dict:
         return json.load(f)
 
 
-def encode_value(raw: float, data_type: str) -> list[int]:
-    """Return a list of 16-bit register words representing the value."""
+def encode_value(raw: float, data_type: str, byte_order: str = 'big', word_order: str = 'big') -> list[int]:
+    """Return a list of 16-bit register words representing the value.
+
+    byte_order: 'big' = MSB first within each 16-bit word (standard)
+                'little' = LSB first within each 16-bit word
+    word_order: 'big' = high word first for 32-bit values (standard)
+                'little' = low word first for 32-bit values
+    """
     if data_type == "bool":
         return [1 if raw >= 1 else 0]
     if data_type == "16int":
-        val = max(-32768, min(32767, int(raw)))
-        return [val & 0xFFFF]
+        val = max(-32768, min(32767, int(raw))) & 0xFFFF
+        if byte_order == 'little':
+            val = ((val & 0xFF) << 8) | ((val >> 8) & 0xFF)
+        return [val]
     if data_type == "16uint":
         val = max(0, min(65535, int(raw)))
-        return [val & 0xFFFF]
+        if byte_order == 'little':
+            val = ((val & 0xFF) << 8) | ((val >> 8) & 0xFF)
+        return [val]
     if data_type in ("32float", "32int", "32uint"):
         if data_type == "32float":
             packed = struct.pack(">f", float(raw))
@@ -48,17 +58,22 @@ def encode_value(raw: float, data_type: str) -> list[int]:
             packed = struct.pack(">i", int(raw))
         else:
             packed = struct.pack(">I", max(0, int(raw)))
-        hi = (packed[0] << 8) | packed[1]
-        lo = (packed[2] << 8) | packed[3]
-        return [hi, lo]
+        b0, b1, b2, b3 = packed[0], packed[1], packed[2], packed[3]
+        if byte_order == 'little':
+            hi = (b1 << 8) | b0
+            lo = (b3 << 8) | b2
+        else:
+            hi = (b0 << 8) | b1
+            lo = (b2 << 8) | b3
+        return [lo, hi] if word_order == 'little' else [hi, lo]
     return [int(raw) & 0xFFFF]
 
 
-def noisy_value(base_raw: float, noise_pct: float) -> float:
+def noisy_value(base_raw: float, noise_pct: float) -> int:
     if noise_pct == 0:
-        return base_raw
+        return int(round(base_raw))
     delta = base_raw * (noise_pct / 100.0)
-    return base_raw + random.uniform(-delta, delta)
+    return int(round(base_raw + random.uniform(-delta, delta)))
 
 
 def build_context(config: dict) -> ModbusServerContext:
@@ -74,11 +89,12 @@ def build_context(config: dict) -> ModbusServerContext:
     return ModbusServerContext(slaves={config["unit_id"]: slave}, single=False)
 
 
-def write_point(context: ModbusServerContext, unit_id: int, point: dict) -> None:
+def write_point(context: ModbusServerContext, unit_id: int, point: dict,
+                byte_order: str = 'big', word_order: str = 'big') -> None:
     fc = point["function_code"]
     reg = point["register"]
     raw = noisy_value(point["base_value_raw"], point["noise_pct"])
-    words = encode_value(raw, point["data_type"])
+    words = encode_value(raw, point["data_type"], byte_order, word_order)
 
     slave = context[unit_id]
     if fc in (1, 5, 15):  # coils
@@ -91,13 +107,32 @@ def write_point(context: ModbusServerContext, unit_id: int, point: dict) -> None
         slave.setValues(4, reg, words)
 
 
-async def update_loop(context: ModbusServerContext, config: dict) -> None:
+async def av_loop(context: ModbusServerContext, config: dict) -> None:
+    """Update analogue points (non-bool) on the AV interval."""
     unit_id = config["unit_id"]
-    interval = config.get("update_interval_seconds", 5)
+    interval = config.get("av_interval_seconds", 30)
+    bo = config.get("byte_order", "big")
+    wo = config.get("word_order", "big")
     while True:
-        for point in config["points"]:
-            write_point(context, unit_id, point)
         await asyncio.sleep(interval)
+        for point in config["points"]:
+            if point["data_type"] != "bool":
+                write_point(context, unit_id, point, bo, wo)
+
+
+async def bv_loop(context: ModbusServerContext, config: dict) -> None:
+    """Update binary points (bool) on the BV interval."""
+    unit_id = config["unit_id"]
+    interval = config.get("bv_interval_seconds", 120)
+    bo = config.get("byte_order", "big")
+    wo = config.get("word_order", "big")
+    while True:
+        await asyncio.sleep(interval)
+        for point in config["points"]:
+            if point["data_type"] == "bool":
+                point["base_value_raw"] = 1 if random.randint(0, 100) >= 50 else 0
+                log.info("Binary register %d → %d", point["register"], point["base_value_raw"])
+                write_point(context, unit_id, point, bo, wo)
 
 
 async def main() -> None:
@@ -107,17 +142,32 @@ async def main() -> None:
 
     context = build_context(config)
 
-    # Write initial values
+    # Write initial clean values (no noise) for all points
+    unit_id = config["unit_id"]
+    bo = config.get("byte_order", "big")
+    wo = config.get("word_order", "big")
     for point in config["points"]:
-        write_point(context, config["unit_id"], point)
+        words = encode_value(point["base_value_raw"], point["data_type"], bo, wo)
+        slave = context[unit_id]
+        fc = point["function_code"]
+        if fc in (1, 5, 15):
+            slave.setValues(1, point["register"], words)
+        elif fc in (2,):
+            slave.setValues(2, point["register"], words)
+        elif fc in (3, 6, 16):
+            slave.setValues(3, point["register"], words)
+        elif fc in (4,):
+            slave.setValues(4, point["register"], words)
 
-    update_task = asyncio.create_task(update_loop(context, config))
+    av_task = asyncio.create_task(av_loop(context, config))
+    bv_task = asyncio.create_task(bv_loop(context, config))
 
     await StartAsyncTcpServer(
         context=context,
         address=("0.0.0.0", 502),
     )
-    update_task.cancel()
+    av_task.cancel()
+    bv_task.cancel()
 
 
 if __name__ == "__main__":

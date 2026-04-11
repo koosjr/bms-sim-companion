@@ -13,7 +13,7 @@ export function generateDeviceConfig(device: SimDevice): string {
       tag: p.tag,
       description: p.description,
       io_type: p.io_type,
-      base_value_raw: Math.round(p.base_value * p.scale),
+      base_value_raw: Math.round(p.base_value / p.scale),
       noise_pct: p.noise_pct,
     };
 
@@ -40,13 +40,16 @@ export function generateDeviceConfig(device: SimDevice): string {
   const config: Record<string, unknown> = {
     device_name: device.name,
     protocol: device.protocol,
-    update_interval_seconds: 10,
+    ip_address: device.ip_address ?? '0.0.0.0',
+    av_interval_seconds: device.sim_period_av_seconds ?? 30,
+    bv_interval_seconds: device.sim_period_bv_seconds ?? 120,
     points,
   };
 
   if (device.protocol === 'modbus') {
     Object.assign(config, {
       unit_id: device.unit_id,
+      port: device.modbus_port ?? 502,
       byte_order: device.byte_order,
       word_order: device.word_order,
     });
@@ -55,6 +58,7 @@ export function generateDeviceConfig(device: SimDevice): string {
       device_instance: device.device_instance,
       device_name_bacnet: device.device_name,
       vendor_id: device.vendor_id,
+      bacnet_port: device.bacnet_port ?? 47808,
     });
   }
 

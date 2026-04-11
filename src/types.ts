@@ -27,7 +27,7 @@ export interface SimulatorExport {
 
 // ── Protocol types ───────────────────────────────────────────────────────────
 
-export type Protocol = 'modbus' | 'bacnet';
+export type Protocol = 'modbus' | 'modbus-rtu' | 'bacnet';
 export type ByteOrder = 'big' | 'little';
 export type ModbusDataType = 'bool' | '16int' | '16uint' | '32float' | '32int' | '32uint';
 export type ModbusFunctionCode = 1 | 2 | 3 | 4;
@@ -91,12 +91,19 @@ export interface SimDevice {
   description: string;
   protocol: Protocol;
   ip_address: string;
-  // Modbus
+  // Modbus TCP
   modbus_port: number;
   unit_id: number;
   byte_order: ByteOrder;
   word_order: ByteOrder;
   addressBase?: 0 | 1;   // 0 = stored as-is (default), 1 = subtract 1 at export
+  sim_period_av_seconds?: number;   // Analogue update interval (AI/AO/AV) — default 30 s
+  sim_period_bv_seconds?: number;   // Binary update interval  (DI/DO/BV) — default 120 s
+  // Modbus RTU (serial)
+  serial_port?: string;   // e.g. /dev/ttyUSB0
+  baud_rate?: number;     // e.g. 38400
+  parity?: 'N' | 'E' | 'O';
+  stop_bits?: 1 | 2;
   // BACnet
   bacnet_port: number;
   device_instance: number;

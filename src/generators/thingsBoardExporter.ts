@@ -1,5 +1,4 @@
 import type { SimDevice, SimPoint, TBReportStrategy } from '../types';
-import { inferReportStrategy } from '../lib/pointDefaults';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -7,14 +6,13 @@ function resolveAddress(address: number, addressBase: 0 | 1 | undefined): number
   return addressBase === 1 ? address - 1 : address;
 }
 
-/** Effective report strategy: explicit override, or auto-inferred from point properties. */
-function effectiveStrategy(p: SimPoint): TBReportStrategy {
-  if (p.report_strategy) return p.report_strategy;
-  return inferReportStrategy(p.tag, p.object_type, p.io_type);
+/** Effective report strategy: explicit override only — null means omit reportStrategy entirely. */
+function effectiveStrategy(p: SimPoint): TBReportStrategy | null {
+  return p.report_strategy ?? null;
 }
 
 function strategyObj(strategy: TBReportStrategy, defaultPeriodMs: number, point?: SimPoint) {
-  if (strategy === 'ON_VALUE_CHANGE') return { type: 'ON_VALUE_CHANGE' };
+  if (strategy === 'ON_VALUE_CHANGE') return { type: 'ON_CHANGE' };
   const periodMs = point?.report_period_ms ?? defaultPeriodMs;
   return { type: 'ON_REPORT_PERIOD', reportPeriod: periodMs };
 }
@@ -34,15 +32,18 @@ export function generateTBModbusSlaves(devices: SimDevice[]): string {
 
       const byCategory = groupByCategory(d.points);
 
-      const timeseries = byCategory.timeseries.map(p => ({
-        tag:          p.tag,
-        type:         p.data_type,
-        address:      resolveAddress(p.register, base),
-        objectsCount: p.object_count,
-        functionCode: p.function_code,
-        ...(p.scale !== 1 ? { multiplier: 1 / p.scale } : {}),
-        reportStrategy: strategyObj(effectiveStrategy(p), defaultPeriodMs, p),
-      }));
+      const timeseries = byCategory.timeseries.map(p => {
+        const eff = effectiveStrategy(p);
+        return {
+          tag:          p.tag,
+          type:         p.data_type,
+          address:      resolveAddress(p.register, base),
+          objectsCount: p.object_count,
+          functionCode: p.function_code,
+          ...(p.scale !== 1 ? { multiplier: p.scale } : {}),
+          ...(eff !== null ? { reportStrategy: strategyObj(eff, defaultPeriodMs, p) } : {}),
+        };
+      });
 
       const attributes = byCategory.attribute.map(p => ({
         tag:          p.tag,
@@ -50,7 +51,7 @@ export function generateTBModbusSlaves(devices: SimDevice[]): string {
         address:      resolveAddress(p.register, base),
         objectsCount: p.object_count,
         functionCode: p.function_code,
-        ...(p.scale !== 1 ? { multiplier: 1 / p.scale } : {}),
+        ...(p.scale !== 1 ? { multiplier: p.scale } : {}),
       }));
 
       const attributeUpdates = byCategory.attribute_update.map(p => ({
@@ -59,7 +60,7 @@ export function generateTBModbusSlaves(devices: SimDevice[]): string {
         address:      resolveAddress(p.register, base),
         objectsCount: p.object_count,
         functionCode: p.function_code,
-        ...(p.scale !== 1 ? { multiplier: 1 / p.scale } : {}),
+        ...(p.scale !== 1 ? { multiplier: p.scale } : {}),
       }));
 
       const rpc = byCategory.rpc.map(p => ({
@@ -88,8 +89,93 @@ export function generateTBModbusSlaves(devices: SimDevice[]): string {
         connectAttemptCount:   5,
         waitAfterFailedAttemptsMs: 300000,
         security: { certfile: '', keyfile: '', password: '', server_hostname: '0.0.0.0' },
-        reportStrategy: strategyObj('ON_REPORT_PERIOD', defaultPeriodMs),
         type: 'tcp',
+        attributes,
+        timeseries,
+        attributeUpdates,
+        rpc,
+      };
+    });
+
+  return JSON.stringify(slaves, null, 2);
+}
+
+// ── Modbus RTU ────────────────────────────────────────────────────────────────
+
+/**
+ * Returns the `slaves` array for a ThingsBoard Modbus RTU (serial) connector.
+ * Paste into: { "master": { "slaves": <here> }, "name": "…", … }
+ */
+export function generateTBModbusRtuSlaves(devices: SimDevice[]): string {
+  const slaves = devices
+    .filter(d => d.protocol === 'modbus-rtu')
+    .map(d => {
+      const base = d.addressBase ?? 0;
+      const defaultPeriodMs = 60000;
+
+      const byCategory = groupByCategory(d.points);
+
+      const timeseries = byCategory.timeseries.map(p => {
+        const eff = effectiveStrategy(p);
+        return {
+          tag:          p.tag,
+          type:         p.data_type,
+          address:      resolveAddress(p.register, base),
+          objectsCount: p.object_count,
+          functionCode: p.function_code,
+          ...(p.scale !== 1 ? { multiplier: p.scale } : {}),
+          ...(eff !== null ? { reportStrategy: strategyObj(eff, defaultPeriodMs, p) } : {}),
+        };
+      });
+
+      const attributes = byCategory.attribute.map(p => ({
+        tag:          p.tag,
+        type:         p.data_type,
+        address:      resolveAddress(p.register, base),
+        objectsCount: p.object_count,
+        functionCode: p.function_code,
+        ...(p.scale !== 1 ? { multiplier: p.scale } : {}),
+      }));
+
+      const attributeUpdates = byCategory.attribute_update.map(p => ({
+        tag:          p.tag,
+        type:         p.data_type,
+        address:      resolveAddress(p.register, base),
+        objectsCount: p.object_count,
+        functionCode: p.function_code,
+        ...(p.scale !== 1 ? { multiplier: p.scale } : {}),
+      }));
+
+      const rpc = byCategory.rpc.map(p => ({
+        tag:          p.tag,
+        type:         p.data_type,
+        address:      resolveAddress(p.register, base),
+        objectsCount: p.object_count,
+        functionCode: p.function_code,
+      }));
+
+      return {
+        port:     d.serial_port ?? '/dev/ttyUSB0',
+        method:   'rtu',
+        baudrate: d.baud_rate ?? 38400,
+        bytesize: 8,
+        stopbits: d.stop_bits ?? 1,
+        parity:   d.parity ?? 'N',
+        strict:   true,
+        unitId:   d.unit_id,
+        deviceName: d.name,
+        deviceType: d.profile_name || d.name,
+        type:     'serial',
+        timeout:  35,
+        byteOrder:  d.byte_order === 'big' ? 'BIG' : 'LITTLE',
+        wordOrder:  d.word_order === 'big' ? 'BIG' : 'LITTLE',
+        retries:          true,
+        retryOnEmpty:     true,
+        retryOnInvalid:   true,
+        pollPeriod:            10000,
+        connectAttemptTimeMs:  5000,
+        connectAttemptCount:   5,
+        waitAfterFailedAttemptsMs: 300000,
         attributes,
         timeseries,
         attributeUpdates,
@@ -115,13 +201,16 @@ export function generateTBBacnetDevices(devices: SimDevice[]): string {
 
       const byCategory = groupByCategory(d.points);
 
-      const timeseries = byCategory.timeseries.map(p => ({
-        key:        p.tag,
-        objectType: p.object_type,
-        objectId:   resolveAddress(p.object_instance, base),
-        propertyId: 'presentValue',
-        reportStrategy: strategyObj(effectiveStrategy(p), defaultPeriodMs, p),
-      }));
+      const timeseries = byCategory.timeseries.map(p => {
+        const eff = effectiveStrategy(p);
+        return {
+          key:        p.tag,
+          objectType: p.object_type,
+          objectId:   resolveAddress(p.object_instance, base),
+          propertyId: 'presentValue',
+          ...(eff !== null ? { reportStrategy: strategyObj(eff, defaultPeriodMs, p) } : {}),
+        };
+      });
 
       const attributes = byCategory.attribute.map(p => ({
         key:        p.tag,
@@ -146,7 +235,6 @@ export function generateTBBacnetDevices(devices: SimDevice[]): string {
 
       return {
         altResponsesAddresses: [],
-        reportStrategy: strategyObj('ON_REPORT_PERIOD', defaultPeriodMs),
         host: d.ip_address,
         port: d.bacnet_port,
         deviceInfo: {

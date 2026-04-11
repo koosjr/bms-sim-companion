@@ -224,10 +224,16 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
                 <span className="text-xs px-2 py-0.5 rounded uppercase font-mono"
                   style={device.protocol === 'modbus'
                     ? { background: '#E1F5EE', color: '#085041' }
+                    : device.protocol === 'modbus-rtu'
+                    ? { background: '#FEF3C7', color: '#92400E' }
                     : { background: '#FAEEDA', color: '#854F0B' }}>
-                  {device.protocol}
+                  {device.protocol === 'modbus-rtu' ? 'RTU' : device.protocol}
                 </span>
-                <span className="text-xs font-mono" style={{ color: '#888780' }}>{device.ip_address}</span>
+                <span className="text-xs font-mono" style={{ color: '#888780' }}>
+                  {device.protocol === 'modbus-rtu'
+                    ? `${device.serial_port ?? '/dev/ttyUSB0'} · ID ${device.unit_id}`
+                    : device.ip_address}
+                </span>
                 {ipConflicts.has(device.ip_address) && (
                   <span className="text-xs" style={{ color: '#E24B4A' }}>⚠ IP conflict</span>
                 )}
@@ -266,23 +272,26 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
                     <select className={inputCls} style={inputStyle} value={device.protocol}
                       onChange={e => patchDevice(device.id, { protocol: e.target.value as Protocol })}>
                       <option value="modbus">Modbus TCP</option>
+                      <option value="modbus-rtu">Modbus RTU (Serial)</option>
                       <option value="bacnet">BACnet/IP</option>
                     </select>
                   </Field>
-                  <Field label="IP Address">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-mono px-2 py-1.5 rounded border whitespace-nowrap"
-                        style={{ borderColor: '#D3D1C7', color: '#888780', background: '#F9F8F4' }}>
-                        {state.network.ip_prefix}.
-                      </span>
-                      <input type="number" min={1} max={254} className={inputCls}
-                        style={{ ...inputStyle, width: 80 }}
-                        value={device.ip_address.split('.').pop() ?? ''}
-                        onChange={e => patchDevice(device.id, {
-                          ip_address: `${state.network.ip_prefix}.${e.target.value}`
-                        })} />
-                    </div>
-                  </Field>
+                  {device.protocol !== 'modbus-rtu' && (
+                    <Field label="IP Address">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-mono px-2 py-1.5 rounded border whitespace-nowrap"
+                          style={{ borderColor: '#D3D1C7', color: '#888780', background: '#F9F8F4' }}>
+                          {state.network.ip_prefix}.
+                        </span>
+                        <input type="number" min={1} max={254} className={inputCls}
+                          style={{ ...inputStyle, width: 80 }}
+                          value={device.ip_address.split('.').pop() ?? ''}
+                          onChange={e => patchDevice(device.id, {
+                            ip_address: `${state.network.ip_prefix}.${e.target.value}`
+                          })} />
+                      </div>
+                    </Field>
+                  )}
                 </div>
 
                 {device.protocol === 'modbus' && (
@@ -290,6 +299,63 @@ export default function DeviceSetupTab({ state, onUpdate, onNext }: Props) {
                     <Field label="Port">
                       <input type="number" className={inputCls} style={inputStyle} value={device.modbus_port}
                         onChange={e => patchDevice(device.id, { modbus_port: Number(e.target.value) })} />
+                    </Field>
+                    <Field label="Unit ID">
+                      <input type="number" className={inputCls} style={inputStyle} value={device.unit_id}
+                        onChange={e => patchDevice(device.id, { unit_id: Number(e.target.value) })} />
+                    </Field>
+                    <Field label="Byte Order">
+                      <select className={inputCls} style={inputStyle} value={device.byte_order}
+                        onChange={e => patchDevice(device.id, { byte_order: e.target.value as ByteOrder })}>
+                        <option value="big">Big</option>
+                        <option value="little">Little</option>
+                      </select>
+                    </Field>
+                    <Field label="Word Order">
+                      <select className={inputCls} style={inputStyle} value={device.word_order}
+                        onChange={e => patchDevice(device.id, { word_order: e.target.value as ByteOrder })}>
+                        <option value="big">Big</option>
+                        <option value="little">Little</option>
+                      </select>
+                    </Field>
+                  </div>
+                )}
+
+                {device.protocol === 'modbus-rtu' && (
+                  <div className="grid grid-cols-4 gap-4">
+                    <Field label="Serial Port">
+                      <input className={inputCls} style={inputStyle}
+                        placeholder="/dev/ttyUSB0"
+                        value={device.serial_port ?? ''}
+                        onChange={e => patchDevice(device.id, { serial_port: e.target.value })} />
+                    </Field>
+                    <Field label="Baud Rate">
+                      <select className={inputCls} style={inputStyle}
+                        value={device.baud_rate ?? 38400}
+                        onChange={e => patchDevice(device.id, { baud_rate: Number(e.target.value) })}>
+                        <option value={9600}>9600</option>
+                        <option value={19200}>19200</option>
+                        <option value={38400}>38400</option>
+                        <option value={57600}>57600</option>
+                        <option value={115200}>115200</option>
+                      </select>
+                    </Field>
+                    <Field label="Parity">
+                      <select className={inputCls} style={inputStyle}
+                        value={device.parity ?? 'N'}
+                        onChange={e => patchDevice(device.id, { parity: e.target.value as 'N' | 'E' | 'O' })}>
+                        <option value="N">None (N)</option>
+                        <option value="E">Even (E)</option>
+                        <option value="O">Odd (O)</option>
+                      </select>
+                    </Field>
+                    <Field label="Stop Bits">
+                      <select className={inputCls} style={inputStyle}
+                        value={device.stop_bits ?? 1}
+                        onChange={e => patchDevice(device.id, { stop_bits: Number(e.target.value) as 1 | 2 })}>
+                        <option value={1}>1</option>
+                        <option value={2}>2</option>
+                      </select>
                     </Field>
                     <Field label="Unit ID">
                       <input type="number" className={inputCls} style={inputStyle} value={device.unit_id}

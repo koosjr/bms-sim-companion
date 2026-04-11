@@ -1,6 +1,6 @@
 // src/components/SimValuesTab.tsx
 import { useState } from 'react';
-import type { AppState, SimPoint } from '../types';
+import type { AppState, SimDevice, SimPoint } from '../types';
 
 interface Props {
   state: AppState;
@@ -23,6 +23,11 @@ export default function SimValuesTab({ state, onUpdate, onNext }: Props) {
       || p.object_type === 'binaryValue';
   }
 
+  function patchDevice(patch: Partial<SimDevice>) {
+    if (!device) return;
+    onUpdate({ devices: devices.map(d => d.id === device.id ? { ...d, ...patch } : d) });
+  }
+
   function patchPoint(tag: string, patch: Partial<SimPoint>) {
     if (!device) return;
     const updated = { ...device, points: device.points.map(p => p.tag === tag ? { ...p, ...patch } : p) };
@@ -42,13 +47,29 @@ export default function SimValuesTab({ state, onUpdate, onNext }: Props) {
     onUpdate({ devices: patched });
   }
 
+  /** Set base_value = address (object_instance or register), noise_pct = 0 — for widget position verification */
+  function applyAddressAsValue(devIds: string[]) {
+    const patched = devices.map(d => {
+      if (!devIds.includes(d.id)) return d;
+      return {
+        ...d,
+        points: d.points.map(p => ({
+          ...p,
+          base_value: d.protocol === 'bacnet' ? p.object_instance : p.register,
+          noise_pct: 0,
+        })),
+      };
+    });
+    onUpdate({ devices: patched });
+  }
+
   if (!device) return <div className="text-sm" style={{ color: '#888780' }}>No devices. Go back to Device Setup.</div>;
 
   return (
     <div className="max-w-3xl">
       <h2 className="text-xl font-bold mb-1" style={{ color: '#2C2C2A' }}>Simulation Values</h2>
       <p className="text-sm mb-4" style={{ color: '#888780' }}>
-        Set base value (engineering units) and noise % for each point. Values update every 5 seconds.
+        Set base value (engineering units) and noise % for each point. Configure update intervals below.
       </p>
 
       {/* Device selector */}
@@ -67,7 +88,7 @@ export default function SimValuesTab({ state, onUpdate, onNext }: Props) {
       </div>
 
       {/* Quick-fill toolbar */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <span className="text-xs" style={{ color: '#888780' }}>Set analogue defaults:</span>
         <button
           onClick={() => applyDefaults([device.id])}
@@ -81,6 +102,46 @@ export default function SimValuesTab({ state, onUpdate, onNext }: Props) {
           style={{ borderColor: '#085041', color: '#fff', background: '#1D9E75' }}>
           50 / 50% — all devices
         </button>
+        <span className="text-xs ml-2" style={{ color: '#888780' }}>Verify layout:</span>
+        <button
+          onClick={() => applyAddressAsValue([device.id])}
+          className="text-xs px-3 py-1.5 rounded border font-medium"
+          style={{ borderColor: '#1a3a6b', color: '#1a3a6b', background: '#E8EFF8' }}
+          title="Set each point's value = its address (instance/register), noise 0% — use to verify widget positions">
+          # Address as value — this device
+        </button>
+        <button
+          onClick={() => applyAddressAsValue(devices.map(d => d.id))}
+          className="text-xs px-3 py-1.5 rounded border font-medium"
+          style={{ borderColor: '#1a3a6b', color: '#fff', background: '#1a3a6b' }}
+          title="Apply to all devices">
+          # Address as value — all devices
+        </button>
+      </div>
+
+      {/* Simulator Intervals */}
+      <div className="bg-white rounded-xl border p-4 mb-4" style={{ borderColor: '#D3D1C7' }}>
+        <h3 className="text-xs font-semibold mb-3" style={{ color: '#888780' }}>SIMULATOR INTERVALS</h3>
+        <div className="flex gap-6 flex-wrap">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs" style={{ color: '#2C2C2A' }}>Analogue period (AI / AO / AV)</span>
+            <div className="flex items-center gap-1">
+              <input type="number" min="5" step="5" className={inputCls} style={{ ...inputStyle, width: '80px' }}
+                value={device.sim_period_av_seconds ?? 30}
+                onChange={e => patchDevice({ sim_period_av_seconds: Number(e.target.value) })} />
+              <span className="text-xs" style={{ color: '#888780' }}>s</span>
+            </div>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs" style={{ color: '#2C2C2A' }}>Binary period (DI / DO / BV)</span>
+            <div className="flex items-center gap-1">
+              <input type="number" min="5" step="5" className={inputCls} style={{ ...inputStyle, width: '80px' }}
+                value={device.sim_period_bv_seconds ?? 120}
+                onChange={e => patchDevice({ sim_period_bv_seconds: Number(e.target.value) })} />
+              <span className="text-xs" style={{ color: '#888780' }}>s</span>
+            </div>
+          </label>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: '#D3D1C7' }}>

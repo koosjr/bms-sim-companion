@@ -28,7 +28,7 @@ describe('generateDeviceConfig', () => {
     expect(cfg.device_name).toBe('AHU1');
     expect(cfg.protocol).toBe('modbus');
     expect(cfg.unit_id).toBe(1);
-    expect(cfg.update_interval_seconds).toBe(5);
+    expect(cfg.update_interval_seconds).toBe(10);
   });
 
   it('converts base_value to raw register value (base * scale)', () => {

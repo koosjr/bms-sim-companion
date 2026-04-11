@@ -144,6 +144,16 @@ export default function PointMappingTab({ state, onUpdate, onNext, onExport }: P
     onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
   }
 
+  /** Set object_type = analogValue on every BACnet point (for address verification) */
+  function makeAllAV() {
+    if (!device) return;
+    const updated = {
+      ...device,
+      points: device.points.map(p => ({ ...p, object_type: 'analogValue' as BACnetObjectType })),
+    };
+    onUpdate({ devices: devices.map(d => d.id === device.id ? updated : d) });
+  }
+
   /** Clear all per-point report strategy overrides back to Default (null = connector default) */
   function applyAutoStrategy() {
     if (!device) return;
@@ -284,12 +294,20 @@ export default function PointMappingTab({ state, onUpdate, onNext, onExport }: P
         </div>
 
         {device.protocol === 'bacnet' && (
-          <button onClick={autoInferUnits}
-            className="text-xs px-3 py-1.5 rounded border font-medium"
-            style={{ borderColor: '#1D9E75', color: '#085041', background: '#E1F5EE' }}
-            title="Auto-fill units for points with noUnits based on tag name keywords">
-            ✦ Auto-units
-          </button>
+          <>
+            <button onClick={autoInferUnits}
+              className="text-xs px-3 py-1.5 rounded border font-medium"
+              style={{ borderColor: '#1D9E75', color: '#085041', background: '#E1F5EE' }}
+              title="Auto-fill units for points with noUnits based on tag name keywords">
+              ✦ Auto-units
+            </button>
+            <button onClick={makeAllAV}
+              className="text-xs px-3 py-1.5 rounded border font-medium"
+              style={{ borderColor: '#1a3a6b', color: '#1a3a6b', background: '#E8EFF8' }}
+              title="Set all points to analogValue object type (use for address verification)">
+              ✦ All → AV
+            </button>
+          </>
         )}
         <button onClick={autoInferStrategies}
           className="text-xs px-3 py-1.5 rounded border font-medium"
@@ -375,7 +393,7 @@ export default function PointMappingTab({ state, onUpdate, onNext, onExport }: P
                       )}
                       <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Category</th>
                       <th className="text-left px-3 py-2 font-medium" style={{ color: '#888780' }}>Report</th>
-                      <th />
+                      <th className="px-2 py-2" style={{ position: 'sticky', right: 0, background: '#F5F4EF', zIndex: 1 }} />
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: '#F1EFE8' }}>
@@ -568,9 +586,10 @@ export default function PointMappingTab({ state, onUpdate, onNext, onExport }: P
                           </td>
 
                           {/* Delete */}
-                          <td className="px-2 py-2">
-                            <button onClick={() => deletePoint(origIdx)}
-                              className="text-xs px-2 py-0.5 rounded border opacity-40 hover:opacity-100 transition-opacity"
+                          <td className="px-2 py-2"
+                            style={{ position: 'sticky', right: 0, background: rowError ? '#FDF0F0' : rowWarn ? '#FFFBF0' : '#fff', zIndex: 1 }}>
+                            <button onClick={() => { if (window.confirm(`Delete point "${point.tag}"?`)) deletePoint(origIdx); }}
+                              className="text-xs px-2 py-0.5 rounded border opacity-60 hover:opacity-100 hover:bg-red-50 transition-opacity"
                               style={{ borderColor: '#E24B4A', color: '#E24B4A' }}
                               title="Delete point">
                               ✕

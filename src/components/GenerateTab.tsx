@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import type { AppState, NetworkConfig } from '../types';
 import { buildProjectZip } from '../generators/zipBuilder';
-import { generateTBModbusSlaves, generateTBBacnetDevices } from '../generators/thingsBoardExporter';
+import { generateTBModbusSlaves, generateTBModbusRtuSlaves, generateTBBacnetDevices } from '../generators/thingsBoardExporter';
 import { validateAllDevices, hasCriticalIssues } from '../lib/validation';
 
 interface Props {
@@ -71,10 +71,12 @@ export default function GenerateTab({ state, onUpdate }: Props) {
     }
   }
 
-  function downloadTBConnector(type: 'modbus' | 'bacnet') {
+  function downloadTBConnector(type: 'modbus' | 'modbus-rtu' | 'bacnet') {
     const slug = project_name.toLowerCase().replace(/\s+/g, '-');
     const json = type === 'modbus'
       ? generateTBModbusSlaves(devices)
+      : type === 'modbus-rtu'
+      ? generateTBModbusRtuSlaves(devices)
       : generateTBBacnetDevices(devices);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -130,11 +132,17 @@ export default function GenerateTab({ state, onUpdate }: Props) {
                   <span className="text-xs px-2 py-0.5 rounded uppercase font-mono"
                     style={d.protocol === 'modbus'
                       ? { background: '#E1F5EE', color: '#085041' }
+                      : d.protocol === 'modbus-rtu'
+                      ? { background: '#FEF3C7', color: '#92400E' }
                       : { background: '#FAEEDA', color: '#854F0B' }
                     }>
-                    {d.protocol}
+                    {d.protocol === 'modbus-rtu' ? 'RTU' : d.protocol}
                   </span>
-                  <span className="font-mono text-xs" style={{ color: '#888780' }}>{d.ip_address}</span>
+                  <span className="font-mono text-xs" style={{ color: '#888780' }}>
+                    {d.protocol === 'modbus-rtu'
+                      ? `${d.serial_port ?? '/dev/ttyUSB0'} · ID ${d.unit_id}`
+                      : d.ip_address}
+                  </span>
                   <span className="text-xs" style={{ color: '#888780' }}>{d.points.length} pts</span>
                 </div>
               </div>
@@ -188,7 +196,15 @@ export default function GenerateTab({ state, onUpdate }: Props) {
           className="px-5 py-2.5 rounded text-sm font-medium text-white transition-opacity"
           style={{ background: '#2C6BAD', opacity: devices.length === 0 ? 0.5 : 1 }}
         >
-          ↓ TB Modbus Connector
+          ↓ TB Modbus TCP
+        </button>
+        <button
+          onClick={() => downloadTBConnector('modbus-rtu')}
+          disabled={devices.length === 0}
+          className="px-5 py-2.5 rounded text-sm font-medium transition-opacity"
+          style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #D97706', opacity: devices.length === 0 ? 0.5 : 1 }}
+        >
+          ↓ TB Modbus RTU
         </button>
         <button
           onClick={() => downloadTBConnector('bacnet')}
