@@ -28,10 +28,10 @@ export function generateCompose(devices: SimDevice[], network: NetworkConfig): s
   for (const device of devices) {
     const svc = serviceName(device);
     const dir = configDir(device);
-    const image = device.protocol === 'modbus' ? 'bms-modbus-sim:latest' : 'bms-bacnet-sim:latest';
+    const buildCtx = device.protocol !== 'bacnet' ? './modbus' : './bacnet';
     lines.push(
       `  ${svc}:`,
-      `    image: ${image}`,
+      `    build: ${buildCtx}`,
       `    container_name: sim_${svc}`,
       '    volumes:',
       `      - ./${dir}/config.json:/app/config.json:ro`,
